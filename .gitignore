@@ -1,0 +1,28 @@
+node_modules
+.next
+out
+build
+.env
+.env*.local
+prisma/dev.db
+prisma/dev.db-journal
+prisma/backups/
+.DS_Store
+*.pem
+npm-debug.log*
+next-env.d.ts
+*.log
+*.tsbuildinfo
+dev-log.txt
+dev-pid.txt
+
+# Backup do .env de producao (contem segredos reais)
+.env.producao
+.env.production
+
+# Relatorio de pendencias gerado por db:sync-tenants
+pendencias-tenants.json
+.env.test
+
+# Zip de backup local (artefato, nao fonte)
+PedidoFlow-pre-piloto-auditoria-claude.zip

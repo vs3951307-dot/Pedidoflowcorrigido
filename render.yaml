@@ -1,0 +1,52 @@
+# render.yaml — Blueprint do Render para o PedidoFlow
+# Uso: conectar o repositório GitHub no Render → "New Blueprint" →
+# escolher este repositório → preencher as env vars marcadas como "sync: false".
+#
+# IMPORTANTE (ver DEPLOY.md §4): rodar SEMPRE como UMA ÚNICA instância.
+# O tempo real (cozinha, mesas, entregas, impressão) usa memória de um
+# processo só; multiplique instâncias apenas se abrir mão disso.
+services:
+  - type: web
+    name: pedidoflow
+    runtime: node
+    region: ohio
+    plan: free
+    buildCommand: npm ci && rm -rf node_modules/.prisma && npx prisma generate && npm run build
+    # No boot, antes de subir a aplicação, roda o passo de migration explícito:
+    # `prisma migrate deploy` + sincronização dos schemas de tenant + backfill
+    # + `setup-config-pizza`. Tudo idempotente — restart é seguro. Isso garante
+    # que a regra de preço de pizza ("config pizza") exista em cada empresa e
+    # que os tenants não fiquem para trás das migrations do `public`. O BUILD
+    # continua sem tocar no banco (princípio do DEPLOY.md §4).
+    startCommand: npm run deploy:migrar && npm run start
+    numInstances: 1
+    healthCheckPath: /api/saude
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "false"
+      # ---- Obrigatórias — preencha no painel do Render (nunca no código) ----
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SECRETS_MASTER_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # ---- Opcionais ----
+      # - key: AGENTE_TOKEN            # fallback legado — prefira token por empresa
+      # - key: WHATSAPP_ACCESS_TOKEN   # fallback legado — prefira config por empresa
+      # - key: WHATSAPP_PHONE_NUMBER_ID
+      # - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+      # - key: WHATSAPP_APP_SECRET      # OBRIGATÓRIO para aceitar POSTs do webhook da Meta (assinatura)
+      # - key: IA_ATENDENTE_API_KEY    # interpretador de IA do atendente (opcional)
+      # - key: COPILOTO_IA_API_KEY     # copiloto com IA (opcional)
+      # - key: IA_ADMIN_API_KEY        # copiloto supremo do Super Admin (opcional)
+      # - key: APP_URL                 # link base nos e-mails de recuperação de senha
+      # - key: RESEND_API_KEY          # e-mail transacional (recuperação de senha)
+      # - key: EMAIL_FROM

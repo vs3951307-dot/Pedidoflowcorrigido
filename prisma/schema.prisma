@@ -1,0 +1,1042 @@
+// PedidoFlow — banco de dados (PostgreSQL via Prisma).
+// Plataforma SaaS multiempresa: toda entidade de domínio pertence a uma
+// Empresa (tenant). O tenant nunca é decidido pelo frontend — sempre pela
+// sessão autenticada no servidor (ver src/lib/acesso.ts).
+//
+// Migrações: `npm run db:migrate` · Seed: `npm run db:seed`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Usada só por `prisma migrate`/`db push` (Neon/Supabase e outros
+  // provedores em nuvem usam um POOLER para a aplicação — que não
+  // suporta prepared statements — e uma conexão DIRETA para migrations.
+  // Se seu Postgres não usa pooler, pode apontar as duas para o mesmo
+  // valor, ou deixar `DIRECT_URL` igual a `DATABASE_URL` no .env.
+  directUrl = env("DIRECT_URL")
+}
+
+// ================================================================
+// PLATAFORMA — Empresa (tenant) e Super Admin
+// ================================================================
+
+// Papel: ADMINISTRADOR | CAIXA | GARCOM | COZINHA | ENTREGADOR
+// (validado em src/lib/permissao.ts — sem enum nativo para manter o
+// mesmo padrão já usado no restante do schema)
+
+// Uma empresa = um estabelecimento (tenant) dentro da plataforma
+// PedidoFlow. Todo dado operacional (usuários, produtos, pedidos, etc.)
+// pertence a exatamente uma Empresa.
+model Empresa {
+  id             String    @id @default(cuid())
+  nome           String // nome fantasia (ex.: "Disk Pizza Rozeno")
+  slug           String    @unique // identificador amigável/URL (ex.: "disk-pizza-rozeno")
+  razaoSocial    String?
+  cnpj           String?
+  telefone       String?
+  email          String?
+  logoUrl        String?
+  // ativa | bloqueada | suspensa | teste | excluida
+  status         String    @default("teste")
+  // basico | profissional | completo — rótulo legado/livre, mantido por
+  // compatibilidade; a fonte de verdade de preço/limites passa a ser
+  // `Plano` (planoId). Uma empresa pode não ter Plano vinculado ainda
+  // (ex.: criada antes do System Builder) — nesse caso este texto livre
+  // continua valendo como fallback de exibição.
+  plano          String    @default("basico")
+  planoAtual     Plano?    @relation(fields: [planoId], references: [id])
+  planoId        String?
+  // JSON: array de módulos habilitados, ex.: ["pdv","mesas","estoque"].
+  // Ver RECURSOS/MODULOS em src/lib/modulos.ts para a lista canônica.
+  modulos        String    @default("[]")
+  // --------------------- System Builder (personalização) ---------------------
+  // JSON: identidade visual (cores, fonte, estilo) aplicada ao ambiente
+  // desta empresa. Ver src/lib/system-builder.ts para os campos aceitos.
+  tema           String    @default("{}")
+  // JSON: textos customizados por tela/rótulo (ex.: {"boasVindas":".."}).
+  textos         String    @default("{}")
+  // JSON: quais itens de menu aparecem e em que ordem, além do que os
+  // módulos habilitados já decidem — permite reordenar/renomear sem
+  // depender de um módulo inteiro.
+  menuConfig     String    @default("[]")
+  // --------------------- Banco por tenant (isolamento estrutural) -------------
+  // Nome do schema PostgreSQL dedicado desta empresa dentro do MESMO
+  // servidor (ex.: "tenant_disk_pizza_rozeno"). Null = ainda não
+  // provisionado (empresa nova antes do primeiro acesso) — ver
+  // src/lib/tenant-db.ts e scripts/provisionar-schema-empresa.ts.
+  schemaBanco    String?   @unique
+  // DATABASE_URL própria, CRIPTOGRAFADA (ver src/lib/crypto-segredos.ts),
+  // para o caso raro de um cliente com banco fisicamente dedicado
+  // (database-per-tenant "de verdade", não só schema separado). Null =
+  // usa o schema dedicado no servidor Postgres compartilhado (padrão).
+  databaseUrlSecreta String?
+  // --------------------- Limites/consumo de IA --------------------------------
+  limiteMensagensIA Int? // null = usa o limite do Plano (ou sem limite)
+  usoIAMesAtual     Int     @default(0)
+  usoIAMesReferencia String? // "2026-08" — controla o reset mensal do contador acima
+  trialFimEm     DateTime?
+  planoInicioEm  DateTime?
+  vencimentoEm   DateTime?
+  // Preenchido a cada requisição autenticada bem-sucedida (painel de
+  // diagnóstico do Super Admin: "última atividade").
+  ultimaAtividadeEm DateTime?
+  observacoes    String? // notas internas do Super Admin (nunca exibidas à empresa)
+  // --------------------- Descoberta do agente de impressão (PEDIDO 1) --------
+  // Hash SHA-256 do token do agente de impressão local (nunca o valor em
+  // texto puro — ver src/app/api/impressao/agente-token/route.ts).
+  //
+  // PRECISA estar aqui, na PLATAFORMA (não no schema do tenant, onde a
+  // configuração de impressão em si vive): o agente local se autentica
+  // ANTES de sabermos a qual empresa ele pertence — é exatamente essa
+  // descoberta que decide qual tenant ativar. Se este campo estivesse
+  // dentro do schema do tenant (ex.: na tabela Configuracao), seria
+  // fisicamente impossível de consultar sem já ter ativado ALGUM tenant
+  // primeiro — cada tenant é um SCHEMA POSTGRES SEPARADO, não uma linha
+  // filtrada por empresaId; não existe uma consulta única que procure
+  // "em todas as empresas" nesse cenário. Único ponto de dado sensível
+  // que fica fora do isolamento por schema — mas é só um HASH, nunca o
+  // token em si, então não há segredo exposto entre empresas.
+  agenteImpressaoTokenHash String? @unique
+  // --------------------- Descoberta do webhook do WhatsApp (PEDIDO 7) --------
+  // Mesmo princípio do token de impressão acima: o webhook da Meta chega
+  // identificando só o `phoneNumberId` (mensagens) ou o `hub.verify_token`
+  // (verificação) — nenhum dos dois diz a qual empresa pertence até
+  // consultarmos por eles, e essa consulta acontece ANTES de qualquer
+  // tenant estar ativo. Ficam na plataforma pelo mesmo motivo: cada
+  // tenant é um schema separado, não uma linha filtrada. O access token
+  // de verdade (sensível, usado para ENVIAR mensagens) continua só no
+  // schema do tenant, nunca replicado aqui.
+  whatsappPhoneNumberId String? @unique
+  whatsappVerifyToken   String?
+  criadoEm       DateTime  @default(now())
+  atualizadoEm   DateTime  @updatedAt
+
+  usuarios            Usuario[]
+  clientes             Cliente[]
+  categorias           Categoria[]
+  produtos             Produto[]
+  sabores              Sabor[]
+  tamanhos             Tamanho[]
+  adicionais           Adicional[]
+  mesas                Mesa[]
+  pedidos              Pedido[]
+  caixas               Caixa[]
+  movimentacoesCaixa   MovimentacaoCaixa[]
+  estoqueProdutos      EstoqueProduto[]
+  movimentacoesEstoque MovimentacaoEstoque[]
+  notasFiscais         NotaFiscal[]
+  entregadores         Entregador[]
+  entregas             Entrega[]
+  documentosFiscais    DocumentoFiscal[]
+  pagamentos           Pagamento[]
+  configuracoes        Configuracao[]
+  conversasWhatsApp    ConversaWhatsApp[]
+  filaImpressao        FilaImpressao[]
+  impressoras          Impressora[]
+  contadorPedido       ContadorPedido?
+  backups              Backup[]
+  auditoria            Auditoria[]
+  usosIa               UsoIa[]
+
+  @@index([status])
+}
+
+// Plano comercial da plataforma — TOTALMENTE editável pelo Super Admin
+// (nome, preço, módulos padrão, limites). Nada de plano fica fixo no
+// código: os valores "R$119,90/249,90/399,90" citados no briefing são
+// só a carga inicial do seed, não uma constante do sistema.
+model Plano {
+  id                String    @id @default(cuid())
+  nome              String // ex.: "Básico", "Intermediário", "Completo"
+  slug              String    @unique
+  preco             Float     @default(0)
+  moeda             String    @default("BRL")
+  descricao         String?
+  // JSON: array de módulos incluídos por padrão neste plano (ver
+  // src/lib/modulos.ts) — aplicado como sugestão ao criar uma empresa
+  // com este plano; a empresa pode ter módulos além/aquém disso depois.
+  modulosPadrao     String    @default("[]")
+  limiteUsuarios    Int? // null = sem limite
+  limiteMensagensIA Int? // mensagens de IA (atendimento) por mês; null = sem limite
+  limiteProdutos    Int? // itens ativos no cardápio; null = sem limite
+  iaIncluida        Boolean   @default(true)
+  ordem             Int       @default(0)
+  ativo             Boolean   @default(true)
+  criadoEm          DateTime  @default(now())
+  atualizadoEm      DateTime  @updatedAt
+  empresas          Empresa[]
+}
+
+// Consumo de IA por empresa (atendimento WhatsApp, copiloto interno,
+// IA administrativa do Super Admin) — permite cobrar/limitar por
+// empresa mesmo usando uma única API paga central. Fica na PLATAFORMA
+// (schema public), não no banco do tenant, porque o Super Admin precisa
+// enxergar o consumo de TODAS as empresas em um único lugar.
+// Conteúdo editável da landing page comercial (PEDIDO: "não deixar
+// imagem principal, textos ou preços fixos no código"). Singleton — um
+// único registro (id fixo "landing"). Planos/preços NUNCA ficam
+// duplicados aqui: a landing sempre busca o `Plano` real na hora de
+// montar a página (ver /api/landing-config) — este model só guarda
+// identidade visual e textos (hero, banners, cores, WhatsApp de
+// contato, segmentos em destaque).
+// Histórico de ações do Copiloto Supremo (PEDIDO 8: "toda alteração
+// deve gerar histórico"; "desfazer alteração"). Fica na plataforma
+// (visível só ao Super Admin) — nunca no schema do tenant.
+// Ação proposta pelo Copiloto (Supremo OU da Empresa) aguardando
+// confirmação explícita (Human-in-the-Loop) — o backend NUNCA confia
+// na lista de ações reenviada pelo cliente; guarda a proposta aqui e
+// só executa o que está registrado sob este id, resolvido uma única
+// vez. Expira sozinha (nunca fica "pendente" para sempre).
+model AcaoPendenteCopiloto {
+  id                String    @id @default(cuid())
+  origem            String // "supremo" | "empresa"
+  solicitanteId     String // SuperAdmin.id OU Usuario.id, conforme `origem`
+  empresaId         String? // null quando é ação de plataforma (Copiloto Supremo)
+  instrucaoOriginal String
+  acoes             String // JSON — a MESMA lista que foi proposta e mostrada
+  resolvida         Boolean   @default(false)
+  criadaEm          DateTime  @default(now())
+  expiraEm          DateTime
+
+  @@index([solicitanteId])
+  @@index([expiraEm])
+}
+
+model HistoricoCopiloto {
+  id                String   @id @default(cuid())
+  superAdminId      String
+  superAdminNome    String
+  empresaId         String? // null = ação de plataforma (ex.: criar plano)
+  empresaNome       String?
+  instrucaoOriginal String
+  acoesAplicadas    String // JSON — lista de AcaoAdmin aplicadas
+  estadoAnterior    String // JSON — snapshot dos campos alterados, antes
+  estadoNovo        String // JSON — snapshot dos campos alterados, depois
+  sucesso           Boolean  @default(true)
+  desfeitoEm        DateTime?
+  criadoEm          DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([criadoEm])
+}
+
+model LandingConfig {
+  id           String   @id @default("landing")
+  conteudo     String   @default("{}") // JSON — ver src/lib/landing-config.ts para os campos aceitos
+  atualizadoEm DateTime @updatedAt
+}
+
+model UsoIa {
+  id             String   @id @default(cuid())
+  empresa        Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresaId      String
+  tipo           String // atendimento | copiloto | admin
+  tokensEntrada  Int      @default(0)
+  tokensSaida    Int      @default(0)
+  custoEstimado  Float    @default(0)
+  criadoEm       DateTime @default(now())
+
+  @@index([empresaId, criadoEm])
+  @@index([tipo])
+}
+
+
+// empresa. Autenticação e sessão totalmente separadas (ver
+// src/lib/super-admin/auth.ts). Enxerga e administra todas as Empresas.
+model SuperAdmin {
+  id           String              @id @default(cuid())
+  nome         String
+  email        String              @unique
+  senhaHash    String
+  ativo        Boolean             @default(true)
+  ultimoAcesso DateTime?
+  criadoEm     DateTime            @default(now())
+  sessoes      SessaoSuperAdmin[]
+}
+
+model SessaoSuperAdmin {
+  token        String     @id
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  superAdminId String
+  userAgent    String?
+  criadoEm     DateTime   @default(now())
+  expiraEm     DateTime
+
+  @@index([superAdminId])
+}
+
+// ------------------------------- Usuários --------------------------------
+
+model Usuario {
+  id           String              @id @default(cuid())
+  empresa      Empresa             @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  nome         String
+  // Único GLOBALMENTE (não por empresa) — decisão deliberada: mantém o
+  // login simples (e-mail + senha, sem exigir subdomínio/slug da empresa
+  // na tela de login) e evita ambiguidade sobre "a qual empresa este
+  // e-mail pertence". Um usuário sempre pertence a exatamente uma Empresa.
+  email        String              @unique
+  senhaHash    String
+  papel        String              @default("CAIXA")
+  ativo        Boolean             @default(true)
+  ultimoAcesso DateTime?
+  criadoEm     DateTime            @default(now())
+  sessoes      Sessao[]
+  permissaos   PermissaoUsuario[]
+  tokens       TokenRecuperacao[]
+  auditoria    Auditoria[]
+  entregador   Entregador?
+
+  @@index([empresaId])
+}
+
+model Sessao {
+  token     String   @id
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId String
+  userAgent String?
+  criadoEm  DateTime @default(now())
+  expiraEm  DateTime
+
+  @@index([usuarioId])
+}
+
+model TokenRecuperacao {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId  String
+  expiraEm   DateTime
+  usadoEm    DateTime?
+  criadoEm   DateTime  @default(now())
+}
+
+// Overrides de permissão por usuário (sobre o padrão do papel).
+model PermissaoUsuario {
+  id        String   @id @default(cuid())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId String
+  recurso   String
+  permitido Boolean
+
+  @@unique([usuarioId, recurso])
+}
+
+// Trilha de auditoria: autenticação e ações administrativas.
+model Auditoria {
+  id          String    @id @default(cuid())
+  empresa     Empresa?  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresaId   String?
+  usuario     Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioId   String?
+  usuarioNome String?
+  acao        String
+  detalhe     String?
+  ip          String?
+  criadoEm    DateTime  @default(now())
+
+  @@index([usuarioId])
+  @@index([criadoEm])
+  @@index([empresaId])
+}
+
+// ------------------------- Clientes e endereços ---------------------------
+
+model Cliente {
+  id        String     @id @default(cuid())
+  empresa   Empresa    @relation(fields: [empresaId], references: [id])
+  empresaId String
+  nome      String
+  telefone  String?
+  email     String?
+  criadoEm  DateTime   @default(now())
+  enderecos Endereco[]
+  pedidos   Pedido[]
+
+  @@index([telefone])
+  @@index([empresaId])
+}
+
+model Endereco {
+  id          String  @id @default(cuid())
+  cliente     Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId   String
+  rotulo      String? // casa | trabalho
+  rua         String
+  bairro      String
+  cidade      String?
+  cep         String?
+  complemento String? // apto, bloco, andar…
+  referencia  String? // ponto de referência para o entregador
+}
+
+// ------------------------------ Catálogo --------------------------------
+
+model Categoria {
+  id        String    @id @default(cuid())
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId String
+  nome      String
+  ordem     Int       @default(0)
+  ativo     Boolean   @default(true)
+  // Agrupa sabores no seletor de 2º/3º sabor (ex.: "pizza"). Diferente de
+  // `nome` (aba do cardápio): sabores de abas distintas podem compartilhar
+  // o mesmo pool quando o grupoSabores é igual. null = produto sem seleção
+  // de sabores.
+  grupoSabores String?
+  produtos  Produto[]
+  adicionais Adicional[] @relation("AdicionalPorCategoria")
+
+  @@unique([empresaId, nome])
+}
+
+model Produto {
+  id          String         @id @default(cuid())
+  empresa     Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId   String
+  nome        String
+  descricao   String
+  preco       Float
+  categoria   Categoria      @relation(fields: [categoriaId], references: [id])
+  categoriaId String
+  emoji       String         @default("🍕")
+  destaque    Boolean        @default(false)
+  ativo       Boolean        @default(true)
+  // Dados fiscais da NFC-e (PEDIDO 19) — preenchidos no cadastro do produto.
+  ncm         String         @default("") // ex.: 1905.90.90 (pizzas)
+  cest        String         @default("") // ex.: 17.052.00 (opcional)
+  csosn       String         @default("102") // Simples Nacional — 102: não sujeito à tributação
+  cfop        String         @default("5102") // venda de mercadoria (balcão); 5405: venda delivery
+  unidade     String         @default("UN") // unidade comercial (unCom)
+  // Foto do produto (PEDIDO: "finalizar upload de foto"). Guarda o caminho
+  // público do arquivo salvo em `public/uploads/produtos/` — nunca o
+  // binário no banco, para não inflar o Postgres com imagens.
+  fotoUrl     String?
+  sabores     ProdutoSabor[]
+  precos      PrecoTamanho[]
+  itens       ItemPedido[]
+
+  @@index([categoriaId])
+  @@index([empresaId])
+}
+
+model Sabor {
+  id        String         @id @default(cuid())
+  empresa   Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId String
+  nome      String
+  // tradicional | especial — distinção do cardápio (PEDIDO 18: o
+  // atendente WhatsApp consulta e informa conforme o cadastro).
+  tipo      String         @default("tradicional")
+  // Disponibilidade do sabor (ex.: "acabou calabresa hoje") — o
+  // atendente WhatsApp e o PDV não oferecem sabores inativos.
+  ativo     Boolean        @default(true)
+  // Foto do sabor — permite associar uma imagem específica a cada sabor
+  // (ex.: foto de uma pizza de mussarela diferente da de calabresa).
+  fotoUrl   String?
+  produtos  ProdutoSabor[]
+
+  @@unique([empresaId, nome])
+}
+
+model ProdutoSabor {
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produtoId String
+  sabor     Sabor   @relation(fields: [saborId], references: [id], onDelete: Cascade)
+  saborId   String
+
+  @@id([produtoId, saborId])
+}
+
+model Tamanho {
+  id         String         @id @default(cuid())
+  empresa    Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId  String
+  nome       String
+  fatorPreco Float          @default(1)
+  // Limite de sabores deste tamanho (substitui o LIMITE_SABORES_POR_TAMANHO
+  // hardcoded em src/lib/catalogo.ts). Backfill: Média=2, Grande=2, Família=3.
+  maxSabores Int            @default(1)
+  precos     PrecoTamanho[]
+
+  @@unique([empresaId, nome])
+}
+
+model PrecoTamanho {
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produtoId String
+  tamanho   Tamanho @relation(fields: [tamanhoId], references: [id], onDelete: Cascade)
+  tamanhoId String
+  valor     Float
+
+  @@id([produtoId, tamanhoId])
+}
+
+model Adicional {
+  id        String  @id @default(cuid())
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  empresaId String
+  nome      String
+  preco     Float   @default(0)
+  ativo     Boolean @default(true)
+  // Vincula o adicional a uma categoria específica (ex.: borda recheada só
+  // para pizzas). null = disponível para todos os produtos (comportamento
+  // atual, preserva o que já funciona).
+  categoriaId String?
+  categoria   Categoria? @relation("AdicionalPorCategoria", fields: [categoriaId], references: [id])
+
+  @@unique([empresaId, nome])
+}
+
+// --------------------------------- Mesas ---------------------------------
+
+model Mesa {
+  id         Int       @id @default(autoincrement())
+  empresa    Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId  String
+  numero     Int
+  capacidade Int       @default(4)
+  status     String    @default("livre") // livre | aguardando | pedido_enviado | conta | ocupada
+  garcom     String?
+  pessoas    Int?
+  abertaEm   DateTime?
+  criadoEm   DateTime  @default(now())
+  pedidos    Pedido[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId])
+}
+
+// --------------------------- Pedidos e itens -----------------------------
+
+model ContadorPedido {
+  empresa      Empresa @relation(fields: [empresaId], references: [id])
+  empresaId    String  @id
+  ultimoNumero Int     @default(1000)
+}
+
+model Pedido {
+  id           String        @id @default(cuid())
+  empresa      Empresa       @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  numero       Int // número sequencial calculado na criação, ÚNICO POR EMPRESA
+  canal        String // balcao | salao | retirada | delivery
+  status       String        @default("andamento") // andamento | concluido | cancelado | pendente | pronto | retirado
+  // Fluxo de produção (KDS): recebido → em_preparo → pronto → finalizado
+  producao          String    @default("recebido")
+  recebidoEm        DateTime  @default(now()) // chegada à cozinha (tempo decorrido)
+  preparoIniciadoEm DateTime?
+  prontoEm          DateTime?
+  finalizadoEm      DateTime?
+  clienteNome  String?
+  cliente      Cliente?      @relation(fields: [clienteId], references: [id])
+  clienteId    String?
+  clienteTelefone String? // snapshot do telefone no momento do pedido
+  mesa         Mesa?         @relation(fields: [mesaId], references: [id])
+  mesaId       Int?
+  observacao   String?
+  // Delivery (PEDIDO 17): previsão combinada, taxa calculada no servidor
+  // por regras configuráveis, troco solicitado e forma de pagamento
+  // escolhida quando o cliente paga na entrega.
+  previsao              String? // ex.: "40 min" ou "20:30"
+  taxaEntrega           Float     @default(0)
+  trocoPara             Float     @default(0) // dinheiro "troco para" (na entrega)
+  formaPagamentoEntrega String? // pix | dinheiro | credito | debito (na entrega)
+  // Origem do pedido (PEDIDO 18): "whatsapp" quando criado pela conversa
+  // de atendimento; null = criado no PDV.
+  origem               String?
+  total        Float         @default(0)
+  // Chave de idempotência da CRIAÇÃO do pedido (item 1 da auditoria:
+  // "duas requisições simultâneas com a mesma chave devem gerar somente
+  // 1 pedido"). Gerada no cliente (UUID v4) por TENTATIVA de envio: se a
+  // mesma requisição chegar duas vezes (duplo clique, retry por timeout
+  // de rede, reenvio de formulário), a segunda encontra a chave já usada
+  // e devolve o pedido JÁ CRIADO em vez de criar outro.
+  //
+  // Nullable: chamadas antigas (sem chave) continuam funcionando — só
+  // ficam sem a proteção. A unicidade é POR EMPRESA
+  // (`@@unique([empresaId, idempotencyKey])`), nunca global: uma chave
+  // usada pela empresa A jamais pode bloquear/vazar um pedido da
+  // empresa B. No Postgres, `NULL`s são distintos entre si num índice
+  // único, então N pedidos sem chave convivem sem conflito.
+  idempotencyKey String?
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+  itens        ItemPedido[]
+  pagamentos   Pagamento[]
+  entrega      Entrega?
+  conversaWhatsApp ConversaWhatsApp?
+  documentoFiscal DocumentoFiscal?
+
+  @@unique([empresaId, numero])
+  @@unique([empresaId, idempotencyKey])
+  @@index([status])
+  @@index([criadoEm])
+  @@index([mesaId])
+  @@index([clienteId])
+  @@index([canal])
+  @@index([producao])
+  @@index([empresaId])
+}
+
+// --------------------------- Fiscal — NFC-e (PEDIDO 19) --------------------
+
+// Registro fiscal da venda: uma NFC-e por pedido. O status reflete SEMPRE
+// a resposta real do provedor/SEFAZ — nenhum documento é marcado como
+// "autorizado" sem protocolo retornado pelo serviço autorizador.
+model DocumentoFiscal {
+  id           String   @id @default(cuid())
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  pedido       Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  pedidoId     String   @unique
+  // pendente | enviado | autorizado | rejeitado | cancelado | nao_configurado | erro
+  status       String   @default("pendente")
+  // Ambiente efetivo da emissão: homologacao | producao (env > banco).
+  ambiente     String   @default("homologacao")
+  provedor     String? // identificador do provedor usado (ex.: "focus" | "outro")
+  numero       Int?     // número da NFC-e (atribuído pelo provedor ou pela numeração local)
+  serie        Int?
+  chave        String? // chave de acesso de 44 dígitos (do retorno do provedor)
+  protocolo    String? // nProt da autorização (SEFAZ)
+  cStat        String? // código do status/rejeição (SEFAZ)
+  xMotivo      String? // mensagem da SEFAZ (autorização ou rejeição)
+  // XML e DANFE: armazenados quando o provedor fornece.
+  xml          String?
+  danfeUrl     String?
+  qrcodeUrl    String? // URL da imagem do QR Code (DANFE NFC-e)
+  qrcodeTexto  String? // payload do QR Code (URL + parâmetros) quando fornecido
+  erro         String? // JSON técnico da última tentativa (rede, validação, credenciais)
+  tentativas   Int      @default(0)
+  emitidaEm    DateTime? // quando o documento foi criado/enviado
+  autorizadaEm DateTime?
+  canceladaEm  DateTime?
+  motivoCancelamento String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([status])
+  @@index([empresaId])
+}
+
+model ItemPedido {
+  id         String   @id @default(cuid())
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId   String
+  produto    Produto? @relation(fields: [produtoId], references: [id])
+  produtoId  String
+  nome       String // snapshot do nome no momento da venda
+  precoUnit  Float
+  quantidade Int
+  tamanho    String? // ex.: "Grande" (fator de preço do tamanho)
+  observacao String?
+  // JSON estruturado: [{ saborId, nome, tipo }] (novo). Aceita também o
+  // formato antigo [nome] para leitura de pedidos já fechados em produção.
+  sabores    String?
+  // JSON estruturado: [{ adicionalId, nome, preco, quantidade }] (novo).
+  // Aceita também o formato antigo [{ nome, preco }].
+  adicionais String?
+  // Meio a meio / três sabores (true quando o item tem 2+ sabores).
+  meioAMeio  Boolean  @default(false)
+  // Quando o item foi enviado à cozinha (impresso). null = nunca impresso.
+  // Backfill: itens já existentes recebem Pedido.criadoEm (conta como já
+  // impresso, para o "Salvar e imprimir" não reimprimir pedido antigo).
+  enviadoCozinhaEm DateTime?
+
+  @@index([pedidoId])
+}
+
+// ------------------------------- Pagamentos ------------------------------
+
+model Pagamento {
+  id        String   @id @default(cuid())
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId String
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  pedidoId  String
+  forma     String // pix | dinheiro | credito | debito
+  valor     Float
+  troco     Float    @default(0)
+  status    String   @default("confirmado") // confirmado | pendente | divergente
+  // Quem confirmou este pagamento (rastreabilidade — PEDIDO: "conta
+  // dividida"/"repasse de dinheiro do garçom"). Nulo em registros
+  // antigos, sem quebrar nada.
+  recebidoPorId   String?
+  recebidoPorNome String?
+  // Dinheiro recebido pelo Garçom no celular (fora do caixa físico)
+  // ainda precisa ser entregue ao caixa — fica `false` até o caixa
+  // confirmar o repasse. Pagamentos no próprio caixa (ou não em
+  // dinheiro) já nascem `true` (não há repasse a fazer).
+  repassadoAoCaixa Boolean @default(true)
+  // Chave de idempotência (PEDIDO 44: "cliques duplos, retry offline e
+  // rede instável não podem duplicar pagamento"). Gerada no CLIENTE no
+  // momento do clique (um valor aleatório por tentativa de envio, não
+  // por pagamento em si) — se a mesma requisição chegar duas vezes
+  // (usuário clicou 2x, ou o app reenviou por timeout sem saber se a
+  // primeira passou), a segunda encontra a chave já usada e devolve o
+  // pagamento existente em vez de criar outro. Nullable: chamadas sem
+  // chave (versões antigas do cliente) continuam funcionando, só sem
+  // a proteção extra.
+  //
+  // CORREÇÃO (item 2 da auditoria): a unicidade passou de GLOBAL
+  // (`@unique` no campo) para POR EMPRESA
+  // (`@@unique([empresaId, idempotencyKey])`). Com unicidade global,
+  // uma chave já usada pela empresa A fazia o `create` da empresa B
+  // falhar com P2002 — ou seja, um pagamento de OUTRO cliente bloqueava
+  // uma cobrança legítima. Além disso, o lookup por `findUnique({
+  // idempotencyKey })` (sem `empresaId`) podia devolver o registro de
+  // OUTRO tenant. Por empresa, os dois problemas somem.
+  idempotencyKey String?
+  criadoEm  DateTime @default(now())
+
+  @@unique([empresaId, idempotencyKey])
+  @@index([pedidoId])
+  @@index([empresaId])
+  @@index([repassadoAoCaixa])
+}
+
+// --------------------------------- Caixa ---------------------------------
+
+model Caixa {
+  id            String               @id @default(cuid())
+  empresa       Empresa              @relation(fields: [empresaId], references: [id])
+  empresaId     String
+  abertoEm      DateTime
+  fechadoEm     DateTime?
+  saldoInicial  Float                @default(0)
+  status        String               @default("aberto") // aberto | fechado
+  movimentacoes MovimentacaoCaixa[]
+
+  // Só pode existir UM caixa "aberto" por empresa por vez — garantido
+  // por um ÍNDICE ÚNICO PARCIAL criado via migration (o DSL do Prisma
+  // não suporta `@@unique` com condição WHERE, então não aparece como
+  // atributo aqui — ver migration 20260806210000_caixa_aberto_unico).
+  // NÃO remover essa migration nem recriá-la sem este índice.
+  @@index([empresaId])
+  @@index([status])
+}
+
+model MovimentacaoCaixa {
+  id         String   @id @default(cuid())
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId  String
+  caixa      Caixa?   @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+  caixaId    String?
+  tipo       String // venda | troco | sangria | entrada | abertura
+  valor     Float
+  descricao  String
+  metodo     String? // forma de pagamento nas vendas
+  criadoEm   DateTime @default(now())
+
+  @@index([caixaId])
+  @@index([criadoEm])
+  @@index([empresaId])
+}
+
+// -------------------------------- Estoque --------------------------------
+
+model EstoqueProduto {
+  id            String                @id @default(cuid())
+  empresa       Empresa               @relation(fields: [empresaId], references: [id])
+  empresaId     String
+  nome          String
+  categoria     String
+  unidade       String
+  quantidade    Float
+  minimo        Float
+  custoUnitario Float
+  // Ativar/desativar (PEDIDO: "permitir editar, ativar/desativar e excluir
+  // de forma segura"). Inativar em vez de excluir preserva o histórico de
+  // movimentações do item — excluir de verdade só é permitido sem nenhuma
+  // movimentação registrada (ver DELETE /api/estoque/[id]).
+  ativo         Boolean               @default(true)
+  // Foto do item de estoque (aba "Fotos" — ajuda a equipe a reconhecer o
+  // insumo físico na prateleira). Mesmo esquema do Produto: só o caminho
+  // público do arquivo, nunca o binário no banco.
+  fotoUrl       String?
+  movimentacoes MovimentacaoEstoque[]
+
+  @@unique([empresaId, nome])
+}
+
+model MovimentacaoEstoque {
+  id          String         @id @default(cuid())
+  empresa     Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId   String
+  produto     EstoqueProduto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produtoId   String
+  tipo        String // entrada | saida
+  quantidade  Float
+  fornecedor  String?
+  valorTotal  Float?
+  responsavel String
+  notaId      String?
+  criadoEm    DateTime       @default(now())
+
+  @@index([produtoId])
+  @@index([criadoEm])
+  @@index([empresaId])
+}
+
+model NotaFiscal {
+  id         String   @id @default(cuid())
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId  String
+  numero     String
+  serie      String   @default("1")
+  fornecedor String
+  emissao    DateTime
+  itens      Int
+  valor      Float
+  status     String   @default("conferida") // conferida | pendente | cancelada
+  // Documento original (PDF/foto) vinculado à nota — armazenado no bucket
+  // PRIVADO do storage (nunca público; acesso por URL assinada via
+  // /api/copiloto/anexo). Só o caminho fica no banco, nunca o binário.
+  documentoCaminho String?
+  documentoMime    String?
+  documentoNome    String?
+  criadoEm   DateTime @default(now())
+
+  @@index([empresaId])
+}
+
+// ------------------------------ Entregadores -----------------------------
+model Entregador {
+  id         String    @id @default(cuid())
+  empresa    Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId  String
+  nome       String
+  email      String?
+  telefone   String? // usado na contingência via WhatsApp (PEDIDO 19) — opcional
+  ativo      Boolean   @default(true)
+  avaliacao  Float     @default(5)
+  statusHoje String    @default("ativo") // ativo | rota | folga
+  entregas   Entrega[]
+  // Relação SEGURA com a conta de login (PEDIDO 14: "criar relação real
+  // entre Usuario e Entregador... toda autorização deve usar IDs").
+  // Antes, autorizar uma entrega comparava `entrega.entregador.nome`
+  // com `usuario.nome` (até com `contains`) — dois entregadores com nome
+  // parecido, ou um simples erro de digitação no cadastro, quebrava o
+  // isolamento de quem pode concluir o quê. `@unique`: um usuário de
+  // login corresponde a NO MÁXIMO um cadastro de entregador.
+  usuario    Usuario?  @relation(fields: [usuarioId], references: [id])
+  usuarioId  String?   @unique
+
+  @@unique([empresaId, email])
+  @@index([empresaId])
+}
+
+model Entrega {
+  id           String       @id @default(cuid())
+  empresa      Empresa      @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  pedido       Pedido       @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  pedidoId     String       @unique
+  // Entregador atribuído (null = aguardando entregador — PEDIDO 17).
+  entregador   Entregador?  @relation(fields: [entregadorId], references: [id])
+  entregadorId String?
+  endereco     String
+  bairro       String
+  complemento  String?
+  referencia   String?
+  telefone     String?
+  // aguardando (sem entregador) | preparo (atribuída) | rota | entregue | cancelada
+  status       String       @default("aguardando")
+  previsao     String?
+  km           Float        @default(0)
+   gorjeta      Float        @default(0)
+  tempoMedio   Int?
+  ocorrencia   String?
+  iniciadaEm   DateTime?
+  concluidaEm  DateTime?
+  criadoEm     DateTime     @default(now())
+  // Token IMPREVISÍVEL pra assumir a entrega via QR (PEDIDO 15: "não
+  // depender apenas de número sequencial facilmente manipulável"). Antes,
+  // o QR codificava só o NÚMERO do pedido (`rozeno:entrega:1158`) — fácil
+  // de adivinhar/incrementar. Gerado uma vez, na criação da entrega.
+  codigoQr     String?      @unique
+
+  @@index([entregadorId])
+  @@index([status])
+  @@index([empresaId])
+}
+
+// ------------------------------ Configurações ----------------------------
+
+model Configuracao {
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  chave        String // empresa | nfce | impressoras | taxas | formas_pagamento | impressao | whatsapp
+  valor        String // JSON
+  atualizadoEm DateTime @updatedAt
+
+  @@id([empresaId, chave])
+}
+
+// ---------------------------- WhatsApp (PEDIDO 18) ------------------------
+
+// Conversa de atendimento (WhatsApp oficial via webhook, ou simulação
+// interna). O estado do atendimento (etapa do fluxo + dados coletados)
+// fica em `estado` (JSON) — a IA/atendente mantém o contexto aqui.
+// Isolamento por empresa: o webhook identifica a empresa pelo
+// phone_number_id recebido (ver Configuracao chave="whatsapp") ANTES de
+// tocar em qualquer ConversaWhatsApp — nunca por número de telefone do
+// cliente sozinho, pois o mesmo cliente pode existir em empresas diferentes.
+model ConversaWhatsApp {
+  id                String   @id @default(cuid())
+  empresa           Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId         String
+  telefone          String
+  nome              String?
+  // nova | em_andamento | aguardando_confirmacao | pedido_criado | humana | encerrada
+  status            String   @default("nova")
+  // Etapa atual do fluxo guiado (saudacao, produto, tamanho, sabores,
+  // adicionais, quantidade, entrega_retirada, endereco, pagamento,
+  // troco, resumo, confirmacao, criado…).
+  etapa             String   @default("saudacao")
+  // JSON com o contexto: cliente, itens, endereco, pagamento etc.
+  estado            String   @default("{}")
+  // Transferência para atendimento humano.
+  atendimentoHumano Boolean  @default(false)
+  humanaDesde       DateTime?
+  motivoTransferencia String?
+  ultimaPergunta    String? // evita repetir a mesma pergunta
+  origem            String   @default("whatsapp") // whatsapp | simulacao
+  // Vínculo com o pedido real criado pela conversa.
+  pedido            Pedido?  @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  pedidoId          String?  @unique
+  mensagens         MensagemWhatsApp[]
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+
+  @@unique([empresaId, telefone])
+  @@index([empresaId])
+}
+
+model MensagemWhatsApp {
+  id         String          @id @default(cuid())
+  conversa   ConversaWhatsApp @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  conversaId String
+  de         String // cliente | sistema | humano
+  texto      String
+  criadoEm   DateTime        @default(now())
+
+  @@index([conversaId])
+}
+
+// Fila de impressão térmica (80 mm) — consumida por um agente local
+// vinculado a UMA empresa (token por empresa/dispositivo — ver
+// Configuracao chave="impressao" e src/lib/impressao.ts). Nada é marcado
+// como concluído sem confirmação do agente; reimpressão cria novo
+// registro e o dedupe evita duplicatas de eventos automáticos.
+model Impressora {
+  id        String  @id @default(cuid())
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  empresaId String
+
+  nome       String
+  modelo     String?
+  fabricante String?
+  // windows | usb_agente | rede_ip | escpos_agente
+  tipoConexao String
+  // Nome exato da impressora instalada no Windows (quando tipoConexao=windows)
+  nomeWindows String?
+  enderecoIp  String?
+  porta       String?
+  // 58mm | 80mm
+  larguraPapel String @default("80mm")
+  vias         Int    @default(1)
+  impressaoAutomatica Boolean @default(true)
+  // JSON array de strings: cozinha | caixa | balcao | retirada | delivery |
+  // mesa | fechamento_caixa | cupom_nao_fiscal | outros. Uma impressora
+  // pode atender vários destinos (ex.: "Cozinha" cobre balcão+retirada+
+  // delivery+mesas, mas não o cupom do caixa).
+  destinos String @default("[]")
+
+  // Identificação do agente/computador ao qual esta impressora está
+  // associada (preenchido quando o Admin seleciona a partir da lista de
+  // impressoras detectadas pelo agente — ver `Impressora.ultimaComunicacaoEm`).
+  computadorVinculado String?
+  ultimaComunicacaoEm DateTime?
+  // Calculado a partir do heartbeat do agente (não é editável à mão) —
+  // ver LIMITE_OFFLINE_MS em src/lib/impressao.ts.
+  statusOnline Boolean @default(false)
+
+  ativa     Boolean  @default(true)
+  criadaEm  DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  @@index([empresaId])
+}
+
+model FilaImpressao {
+  id           String    @id @default(cuid())
+  empresa      Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId    String
+  tipo         String // pedido-cozinha | pedido-balcao | retirada | delivery | cupom | fechamento-caixa | teste
+  destino      String // cozinha | caixa
+  referencia   String // "pedido:1155" | "caixa:<id>" | "teste:cozinha"
+  conteudo     String // texto pronto para térmica 80 mm
+  vias         Int       @default(1)
+  status       String    @default("pendente") // pendente | processando | concluido | erro | cancelado
+  tentativas   Int       @default(0)
+  erro         String?
+  criadoPor    String? // id do usuário (reimpressão manual); null = automático
+  // Impressora ESPECÍFICA deste trabalho (PEDIDO: "cada trabalho de
+  // impressão deve informar qual impressora específica deve ser usada").
+  // `nomeImpressoraWindows` é um SNAPSHOT do nome no momento em que o
+  // trabalho foi enfileirado — se o cadastro da impressora mudar depois,
+  // trabalhos já na fila continuam indo pra impressora que existia
+  // quando foram criados, não pra uma reconfigurada depois.
+  impressoraId         String?
+  nomeImpressoraWindows String?
+  // LEASE de reivindicação (substitui o timeout cego de 60s — PEDIDO:
+  // "implementar heartbeat/renovação de lease enquanto o agente estiver
+  // imprimindo"). `claimId` é um token aleatório gerado a cada
+  // reivindicação — só quem apresenta o `claimId` correto pode renovar,
+  // concluir ou reportar erro deste trabalho específico (impede que um
+  // agente "zumbi" que perdeu o lease ainda consiga confirmar depois que
+  // outro agente já reivindicou de novo). `leaseAte` é renovado pelo
+  // heartbeat enquanto a impressão está em andamento; só quando
+  // `leaseAte` já passou é que o trabalho volta a poder ser reivindicado
+  // por outro agente — nunca por um timeout fixo desde a reivindicação.
+  claimId       String?
+  leaseAte      DateTime?
+  processandoPor String? // computador que detém o lease atual
+  processandoEm DateTime?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  concluidoEm  DateTime?
+
+  @@index([status])
+  @@index([criadoEm])
+  @@index([empresaId])
+}
+
+model Backup {
+  id        String   @id @default(cuid())
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId String? // null = backup da plataforma inteira (feito pelo Super Admin)
+  data      DateTime
+  tipo      String // automatico | manual
+  tamanho   String
+  destino   String
+  // Caminho/nome real do arquivo no storage (bucket "backups" — Supabase
+  // ou disco local, conforme configuração). Nullable: registros antigos
+  // (antes deste campo existir) continuam listados, só não têm como
+  // baixar/restaurar automaticamente — `destino` ainda documenta onde
+  // procurar manualmente.
+  caminhoArquivo String?
+  // Versão do FORMATO do snapshot (ver VERSAO_BACKUP em
+  // src/app/api/backups/route.ts) — o restore recusa versões que não
+  // sabe interpretar, em vez de tentar e corromper dados.
+  versaoFormato Int?
+  status    String   @default("concluido") // concluido | falhou | em_andamento
+
+  @@index([empresaId])
+}

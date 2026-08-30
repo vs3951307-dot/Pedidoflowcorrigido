@@ -1,0 +1,199 @@
+
+> pedidoflow-saas@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 33.8s
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 14.9s (83 modules)
+ POST /api/auth/login 200 in 26173ms
+ ○ Compiling /api/mesas ...
+ ✓ Compiled /api/mesas in 633ms (86 modules)
+ GET /api/mesas 200 in 2850ms
+ ○ Compiling /api/catalogo ...
+ ✓ Compiled /api/catalogo in 1780ms (89 modules)
+ GET /api/catalogo 200 in 3420ms
+ POST /api/auth/login 401 in 515ms
+ ○ Compiling /api/superadmin/auth/login ...
+ ✓ Compiled /api/superadmin/auth/login in 963ms (92 modules)
+ POST /api/superadmin/auth/login 200 in 3826ms
+ ○ Compiling / ...
+The user aborted a request.
+
+Retrying 1/3...
+The user aborted a request.
+
+Retrying 1/3...
+ ✓ Compiled / in 39.1s (746 modules)
+ GET / 200 in 49969ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 56.8s (747 modules)
+ GET /login 200 in 68979ms
+ GET /login 200 in 5377ms
+ GET /login 200 in 5644ms
+ ○ Compiling /api/auth/empresa-por-email ...
+ ✓ Compiled /api/auth/empresa-por-email in 7.9s (399 modules)
+ POST /api/auth/empresa-por-email 200 in 14424ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 3.6s (401 modules)
+ POST /api/auth/login 200 in 6519ms
+ ○ Compiling /pdv ...
+ ✓ Compiled /pdv in 34.5s (1220 modules)
+ ✓ Compiled in 2.5s (572 modules)
+ ○ Compiling /api/pedidos ...
+ ✓ Compiled /api/pedidos in 3.2s (655 modules)
+ ✓ Compiled (668 modules)
+ GET /api/pedidos?canal=retirada&periodo=hoje&limite=100 200 in 8218ms
+ GET /api/mesas 200 in 8332ms
+ GET /api/catalogo 200 in 8466ms
+ ○ Compiling /api/caixa ...
+ ✓ Compiled /api/caixa in 1184ms (670 modules)
+ GET /api/mesas 200 in 2289ms
+ GET /api/caixa 200 in 2817ms
+ GET /api/pedidos?canal=retirada&periodo=hoje&limite=100 200 in 2768ms
+ GET /api/caixa 200 in 200ms
+ GET /api/catalogo 200 in 423ms
+ ○ Compiling /api/mesas/[id] ...
+ ✓ Compiled /api/mesas/[id] in 4.7s (672 modules)
+ PATCH /api/mesas/2 200 in 10933ms
+ GET /api/mesas 200 in 449ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 22.4s (653 modules)
+ POST /api/auth/login 200 in 37100ms
+ ○ Compiling /api/mesas ...
+ ✓ Compiled /api/mesas in 2.6s (656 modules)
+ GET /api/mesas 200 in 9741ms
+ ○ Compiling /api/mesas/[id] ...
+ ✓ Compiled /api/mesas/[id] in 20.7s (660 modules)
+ PATCH /api/mesas/5 200 in 26502ms
+ ○ Compiling /api/catalogo ...
+ ✓ Compiled /api/catalogo in 1381ms (663 modules)
+ GET /api/catalogo 200 in 3746ms
+ ○ Compiling /api/mesas/[id]/itens ...
+ ✓ Compiled /api/mesas/[id]/itens in 1780ms (667 modules)
+
+========== ERRO REAL — mesas.id.itens.POST ==========
+Mensagem: 
+Invalid `prisma.pedido.create()` invocation:
+
+
+Unique constraint failed on the fields: (`empresaId`,`numero`)
+Contexto extra: {"url":"/api/mesas/5/itens"}
+Stack:
+PrismaClientKnownRequestError: 
+Invalid `prisma.pedido.create()` invocation:
+
+
+Unique constraint failed on the fields: (`empresaId`,`numero`)
+    at $n.handleRequestError (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async _lib_prisma__WEBPACK_IMPORTED_MODULE_1__.prisma.$transaction.timeout (webpack-internal:///(rsc)/./src/app/api/mesas/[id]/itens/route.ts:90:26)
+    at async Proxy._transactionWithCallback (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async eval (webpack-internal:///(rsc)/./src/app/api/mesas/[id]/itens/route.ts:71:21)
+    at async eval (webpack-internal:///(rsc)/./src/lib/api-erro.ts:49:20)
+    at async C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:57228
+    at async eT.execute (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:46851)
+    at async eT.handle (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:58760)
+    at async doRender (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\start-server.js:141:13)
+================================================
+
+ POST /api/mesas/5/itens 500 in 7875ms
+ GET /api/mesas 200 in 733ms
+ GET /api/eventos?topicos=mesa%2Cpedido 200 in 631899ms
+ GET /api/eventos?topicos=pedido 200 in 632258ms
+ GET /api/eventos?topicos=pedido 200 in 632281ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 24.2s (1239 modules)
+ ○ Compiling /api/dashboard ...
+ ✓ Compiled /api/dashboard in 4.5s (667 modules)
+ GET /api/dashboard 200 in 12387ms
+ GET /api/dashboard 200 in 718ms
+ ○ Compiling /admin/configuracoes ...
+ ✓ Compiled /admin/configuracoes in 56.8s (1426 modules)
+ GET /admin 200 in 19740ms
+ GET /api/dashboard 200 in 16333ms
+ ○ Compiling /api/configuracoes ...
+ ✓ Compiled /api/catalogo/importar in 148.6s (846 modules)
+ ✓ Compiled (853 modules)
+ GET /api/configuracoes 200 in 198525ms
+ GET /api/configuracoes 200 in 219911ms
+ GET /api/dashboard 200 in 215561ms
+ GET /api/catalogo 200 in 187738ms
+ GET /api/catalogo 200 in 215200ms
+ POST /api/catalogo/importar 200 in 123906ms
+ GET /api/catalogo 200 in 1288ms
+ ○ Compiling /api/mesas ...
+ ✓ Compiled /api/mesas in 21.5s (855 modules)
+ ✓ Compiled /api/impressao in 4ms (855 modules)
+ ✓ Compiled in 33ms (780 modules)
+ GET /api/impressao/status 200 in 171266ms
+ GET /api/impressao/agente-token 200 in 171850ms
+ GET /api/impressao 200 in 172026ms
+ GET /api/backups 200 in 172362ms
+ GET /api/catalogo 200 in 183510ms
+ GET /api/mesas 200 in 188181ms
+
+========== ERRO REAL — catalogo.GET ==========
+Mensagem: 
+Invalid `prisma.produto.findMany()` invocation:
+
+
+Can't reach database server at `localhost:5433`
+
+Please make sure your database server is running at `localhost:5433`.
+Contexto extra: {"url":"/api/catalogo"}
+Stack:
+PrismaClientKnownRequestError: 
+Invalid `prisma.produto.findMany()` invocation:
+
+
+Can't reach database server at `localhost:5433`
+
+Please make sure your database server is running at `localhost:5433`.
+    at $n.handleRequestError (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async eval (webpack-internal:///(rsc)/./src/app/api/catalogo/route.ts:24:22)
+    at async eval (webpack-internal:///(rsc)/./src/lib/api-erro.ts:49:20)
+    at async C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:57228
+    at async eT.execute (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:46851)
+    at async eT.handle (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:6:58760)
+    at async doRender (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\conta\Desktop\projetoclaud\pedidoflow-plataforma-saas-corrigido (1)\node_modules\next\dist\server\lib\start-server.js:141:13)
+================================================
+
+^C

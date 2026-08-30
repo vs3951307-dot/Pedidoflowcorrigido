@@ -1,0 +1,233 @@
+/* TenantSplashScreen — animação de entrada multi-tenant */
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.4s ease-out, filter 0.4s ease-out;
+}
+
+.splash-overlay[data-state="visible"] {
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+.splash-overlay[data-state="hiding"] {
+  opacity: 0;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* ── Grid de fundo ── */
+.splash-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(hsl(0 0% 100% / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(0 0% 100% / 0.03) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* ── Aura radial ── */
+.splash-aura {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: splash-aura-pulse 3s ease-in-out infinite;
+}
+
+@keyframes splash-aura-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.08); opacity: 0.45; }
+}
+
+/* ── Logo wrapper ── */
+.splash-logo-wrapper {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 28px;
+  animation: splash-logo-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: scale(0.8) translateY(12px);
+}
+
+@keyframes splash-logo-enter {
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Glow atrás da logo ── */
+.splash-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 36px;
+  filter: blur(24px);
+  opacity: 0.5;
+  animation: splash-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes splash-glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.65; }
+}
+
+/* ── Imagem da logo ── */
+.splash-logo-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 24px;
+}
+
+/* ── Fallback: iniciais ── */
+.splash-logo-initials {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: white;
+}
+
+/* ── Efeito sheen (brilho percorrendo) ── */
+.splash-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 28px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.splash-sheen::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    hsl(0 0% 100% / 0.18) 45%,
+    hsl(0 0% 100% / 0.25) 50%,
+    hsl(0 0% 100% / 0.18) 55%,
+    transparent 60%
+  );
+  transform: skewX(-20deg);
+  animation: splash-sheen-sweep 2s ease-in-out forwards;
+  animation-delay: 0.3s;
+}
+
+@keyframes splash-sheen-sweep {
+  from { left: -60%; }
+  to { left: 120%; }
+}
+
+/* ── Nome da empresa ── */
+.splash-nome {
+  position: relative;
+  z-index: 2;
+  margin-top: 28px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: white;
+  text-align: center;
+  animation: splash-text-enter 0.5s ease-out forwards;
+  animation-delay: 0.25s;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@keyframes splash-text-enter {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Mensagem ── */
+.splash-mensagem {
+  position: relative;
+  z-index: 2;
+  margin-top: 8px;
+  font-size: 14px;
+  color: hsl(0 0% 100% / 0.55);
+  text-align: center;
+  animation: splash-text-enter 0.5s ease-out forwards;
+  animation-delay: 0.4s;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* ── Barra de progresso ── */
+.splash-progress-track {
+  position: relative;
+  z-index: 2;
+  margin-top: 36px;
+  width: 180px;
+  height: 3px;
+  border-radius: 999px;
+  background: hsl(0 0% 100% / 0.12);
+  overflow: hidden;
+  animation: splash-text-enter 0.5s ease-out forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+.splash-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: hsl(0 0% 100% / 0.65);
+  animation: splash-progress-fill 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes splash-progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* ── Acessibilidade ── */
+@media (prefers-reduced-motion: reduce) {
+  .splash-aura,
+  .splash-logo-wrapper,
+  .splash-sheen::after,
+  .splash-nome,
+  .splash-mensagem,
+  .splash-progress-track,
+  .splash-progress-bar,
+  .splash-glow {
+    animation: none !important;
+  }
+  .splash-logo-wrapper {
+    opacity: 1;
+    transform: none;
+  }
+  .splash-nome,
+  .splash-mensagem,
+  .splash-progress-track {
+    opacity: 1;
+    transform: none;
+  }
+  .splash-progress-bar {
+    width: 100%;
+  }
+}

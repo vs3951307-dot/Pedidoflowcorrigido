@@ -1,0 +1,1477 @@
+{
+  "resumo": {
+    "totalArquivosButtonShadcn": 67,
+    "totalBotoesHTMLNativos": 25,
+    "totalLinksEstilizados": 5,
+    "totalCtaLink": 3,
+    "totalButtonVariants": 1,
+    "arquivosComWFull": 8
+  },
+  "componenteButton": {
+    "arquivo": "src/components/ui/button.tsx",
+    "variantes": ["primary", "secondary", "outline", "ghost", "destructive", "link"],
+    "tamanhos": ["sm", "md", "lg", "xl", "icon"],
+    "tamanhoPadrao": "lg",
+    "variantePadrao": "primary",
+    "suportaAsChild": true,
+    "classesBase": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold tracking-[-0.01em] transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+    "classesPorVariante": {
+      "primary": "bg-primary text-primary-foreground shadow-soft hover:bg-primary-700 active:bg-primary-800",
+      "secondary": "bg-secondary text-secondary-foreground border border-border hover:bg-ink-100",
+      "outline": "border-2 border-border bg-transparent text-foreground hover:bg-secondary",
+      "ghost": "text-foreground hover:bg-secondary",
+      "destructive": "bg-destructive text-destructive-foreground hover:opacity-90",
+      "link": "text-primary underline-offset-4 hover:underline p-0 h-auto"
+    },
+    "classesPorTamanho": {
+      "sm": "h-12 px-4 text-sm lg:h-10 lg:px-3 lg:text-sm",
+      "md": "h-14 px-6 text-base lg:h-11 lg:px-5 lg:text-sm",
+      "lg": "h-16 px-8 text-lg lg:h-12 lg:px-6 lg:text-base",
+      "xl": "h-[4.5rem] px-10 text-xl lg:h-14 lg:px-8 lg:text-lg",
+      "icon": "h-14 w-14 shrink-0 lg:h-11 lg:w-11"
+    }
+  },
+  "usagesButtonShadcn": [
+    {
+      "arquivo": "src/app/_components/home-cliente.tsx",
+      "linhas": [70, 73],
+      "tipo": "Button shadcn",
+      "variant": "ghost",
+      "size": "sm",
+      "classes": "variant=ghost size=sm",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/painel.tsx",
+      "linhas": [178, 182, 186, 208, 261, 360, 363, 488],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 178, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 182, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 186, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 208, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 261, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm text-destructive", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 360, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 363, "variant": "destructive", "size": "lg", "classes": "variant=destructive size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 488, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default) type=submit", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/landing-editor.tsx",
+      "linhas": [273],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/construtor-planos.tsx",
+      "linhas": [227, 265, 269, 383, 386],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 227, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 265, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 269, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 383, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 386, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/superadmin/login/page.tsx",
+      "linhas": [80],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) type=submit mt-2",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/superadmin/copiloto/_components/copiloto-supremo.tsx",
+      "linhas": [150, 163, 215, 293, 296, 397, 401, 466, 470, 523, 546],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 150, "variant": "ghost", "size": "icon", "classes": "variant=ghost size=icon", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 163, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 215, "variant": "primary", "size": "icon", "classes": "variant=primary size=icon h-12 w-12 shrink-0 type=submit", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 293, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 296, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 397, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 401, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 466, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 470, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 523, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 546, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": true, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/components/patterns/produto-card.tsx",
+      "linhas": [114],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) w-full mt-auto",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/components/patterns/item-pedido-row.tsx",
+      "linhas": [55, 70, 84, 96, 107],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 55, "variant": "outline", "size": "icon", "classes": "variant=outline size=icon h-9 w-9 ou h-10 w-10", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 70, "variant": "outline", "size": "icon", "classes": "variant=outline size=icon h-9 w-9 ou h-10 w-10", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 84, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm px-3", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 96, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm px-3 hover:text-destructive", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 107, "variant": "ghost", "size": "icon", "classes": "variant=ghost size=icon h-10 w-10 hover:text-destructive", "temIcone": true, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/components/patterns/floating-cart-bar.tsx",
+      "linhas": [19],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) w-full justify-between px-5",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/components/patterns/empty-state.tsx",
+      "linhas": [40],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "md",
+      "classes": "variant=primary size=md mt-3",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/components/patterns/confirmar-acao.tsx",
+      "linhas": [47],
+      "tipo": "Button shadcn (dentro de AlertDialogAction)",
+      "variant": "destructive ou primary (prop)",
+      "size": "lg",
+      "classes": "variant=prop size=lg (default)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true
+    },
+    {
+      "arquivo": "src/components/layout/header.tsx",
+      "linhas": [53, 81],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 53, "variant": "ghost", "size": "icon", "classes": "variant=ghost size=icon lg:hidden", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 81, "variant": "secondary", "size": "icon", "classes": "variant=secondary size=icon relative", "temIcone": true, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/components/layout/alterar-senha-dialog.tsx",
+      "linhas": [107],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) type=submit mt-1",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/components/impressao/visualizacao-impressao.tsx",
+      "linhas": [38, 42],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 38, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 42, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/components/impressao/fila-impressao.tsx",
+      "linhas": [177, 183, 187],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 177, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 183, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 187, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": true, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/cozinha/page.tsx",
+      "linhas": [255, 274, 278, 446],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 255, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 274, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 278, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 446, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/atendimento/page.tsx",
+      "linhas": [231, 322, 353, 364, 375, 427],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 231, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 322, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 353, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 364, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 375, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 427, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/salao-view.tsx",
+      "linhas": [241, 280, 284, 288, 292, 311, 360, 380, 429, 432, 480, 490, 503, 506],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 241, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 280, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 284, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 288, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 292, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 311, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 360, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 380, "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 429, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 432, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 480, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 490, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 503, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 506, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/retirada-view.tsx",
+      "linhas": [200, 312, 322, 329, 406, 409],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 200, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 312, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 322, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 329, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 406, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 409, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linhas": [192, 202],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 192, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default) w-full", "usaWFull": true, "temIcone": true, "estaEmGrupo": true},
+        {"linha": 202, "variant": "outline", "size": "md", "classes": "variant=outline size=md w-full", "usaWFull": true, "temIcone": true, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linhas": [462, 465],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 462, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 465, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pagamento-dialog.tsx",
+      "linhas": [248, 251],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 248, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 251, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/nfce-dialog.tsx",
+      "linhas": [255, 259],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 255, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 259, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/pdv/_components/delivery-view.tsx",
+      "linhas": [854],
+      "tipo": "Button shadcn",
+      "variant": "ghost",
+      "size": "sm",
+      "classes": "variant=ghost size=sm self-start text-muted-foreground",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/pdv/_components/caixa-view.tsx",
+      "linhas": [163],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) w-full",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/pdv/_components/repasses-pendentes.tsx",
+      "linhas": [74],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "sm",
+      "classes": "variant=primary size=sm",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/pdv/page.tsx",
+      "linhas": [294],
+      "tipo": "Button shadcn (NÃO — este é <button> HTML nativo)",
+      "observacao": "Ver seção botoesHTMLNativos"
+    },
+    {
+      "arquivo": "src/app/admin/relatorios/page.tsx",
+      "linhas": [8],
+      "tipo": "Button shadcn import mas usado como <button> HTML",
+      "observacao": "Importa Button mas na linha 181 usa <button> HTML nativo"
+    },
+    {
+      "arquivo": "src/app/admin/fiscal/page.tsx",
+      "linhas": [17, 263],
+      "tipo": "Button shadcn import mas usa <button> HTML",
+      "observacao": "Importa Button mas usa <button> HTML na linha 263"
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "linhas": [25, 254, 284],
+      "tipo": "Button shadcn import mas usa <button> HTML",
+      "observacao": "Importa Button mas usa <button> HTML nas linhas 254, 284"
+    },
+    {
+      "arquivo": "src/app/admin/estoque/_components/estoque-fotos.tsx",
+      "linhas": [7, 127, 139, 149],
+      "tipo": "Button shadcn + <button> HTML",
+      "detalhes": [
+        {"linha": 127, "tipo": "<button> HTML nativo", "classes": "flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-secondary/40", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 139, "tipo": "Button shadcn", "variant": "primary ou outline", "size": "sm", "classes": "variant=sm", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 149, "tipo": "Button shadcn", "variant": "ghost", "size": "sm", "classes": "variant=ghost size=sm", "temIcone": true, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/admin/estoque/_components/estoque-produtos.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button — usos específicos nas linhas internas"
+    },
+    {
+      "arquivo": "src/app/admin/estoque/_components/estoque-notas.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/estoque/page.tsx",
+      "linhas": [9],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/entregadores-pagamentos/page.tsx",
+      "linhas": [5],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregadores.tsx",
+      "linhas": [7, 193, 210],
+      "tipo": "Button shadcn + <button> HTML",
+      "detalhes": [
+        {"linha": 193, "tipo": "<button> HTML nativo", "classes": "inline-flex items-center gap-1.5 rounded-full border border-status-free-border bg-status-free-bg px-2.5 py-0.5 text-xs font-semibold text-status-free hover:opacity-80", "temIcone": true, "estaEmGrupo": false},
+        {"linha": 210, "tipo": "<button> HTML nativo", "classes": "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold hover:opacity-80", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-whatsapp.tsx",
+      "linhas": [19],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregador-contingencia.tsx",
+      "linhas": [10],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-usuarios.tsx",
+      "linhas": [8],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-empresa.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-categorias.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-taxas.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-backup.tsx",
+      "linhas": [6],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-produtos.tsx",
+      "linhas": [17, 493, 751],
+      "tipo": "Button shadcn + <button> HTML",
+      "detalhes": [
+        {"linha": 493, "tipo": "<button> HTML nativo", "classes": "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-opacity hover:opacity-80", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 751, "tipo": "<button> HTML nativo", "classes": "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-card px-6 py-10 text-center transition-colors hover:border-primary/40 hover:bg-secondary/40", "temIcone": true, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-auditoria.tsx",
+      "linhas": [6],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-pizza-preco.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-atendente-ia.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-nfce.tsx",
+      "linhas": [16],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-mesas.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-impressoras.tsx",
+      "linhas": [7, 561],
+      "tipo": "Button shadcn + <button> HTML",
+      "detalhes": [
+        {"linha": 561, "tipo": "<button> HTML nativo", "classes": "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-fila-impressao.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/entregador/scanear/page.tsx",
+      "linhas": [19, 197, 202, 228],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 197, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 202, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 228, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/entregador/relatorio/page.tsx",
+      "linhas": [8, 128],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 128, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/entregador/qrcode/page.tsx",
+      "linhas": [9, 139, 147],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 139, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default) flex-1", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 147, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default) flex-1", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/entregador/page.tsx",
+      "linhas": [21, 251, 311, 451, 458, 463, 475, 484, 552, 561, 570, 581, 584, 658, 661],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 251, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 311, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm asChild", "temIcone": true, "estaEmGrupo": false, "link": "a href=/entregador/scanear"},
+        {"linha": 451, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 458, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 463, "variant": "primary", "size": "sm", "classes": "variant=primary size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 475, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 484, "variant": "outline", "size": "sm", "classes": "variant=outline size=sm asChild", "temIcone": true, "estaEmGrupo": false, "link": "a href={mapsUrl}"},
+        {"linha": 552, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 561, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 570, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 581, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 584, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 658, "variant": "ghost", "size": "lg", "classes": "variant=ghost size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 661, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/entregador/pagamento/page.tsx",
+      "linhas": [9, 193, 309],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 193, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 309, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/entregador/offline/page.tsx",
+      "linhas": [8, 154],
+      "tipo": "Button shadcn",
+      "variant": "outline",
+      "size": "lg",
+      "classes": "variant=outline size=lg (default) w-full sm:w-fit",
+      "usaWFull": true,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/entregador/error.tsx",
+      "linhas": [7, 47],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/entregador/carrinho/page.tsx",
+      "linhas": [7],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button"
+    },
+    {
+      "arquivo": "src/app/garcom/_components/pedido-cart.tsx",
+      "linhas": [5, 89, 100],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 89, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 100, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": false}
+      ]
+    },
+    {
+      "arquivo": "src/app/garcom/_components/catalogo-produtos.tsx",
+      "linhas": [5, 93],
+      "tipo": "Button shadcn",
+      "variant": "outline",
+      "size": "lg",
+      "classes": "variant=outline size=lg (default)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/garcom/page.tsx",
+      "linhas": [12, 158, 168, 181, 184],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 158, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 168, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 181, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 184, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/garcom/mesa/[id]/page.tsx",
+      "linhas": [8, 119, 245, 248],
+      "tipo": "Button shadcn",
+      "detalhes": [
+        {"linha": 119, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": false},
+        {"linha": 245, "variant": "outline", "size": "lg", "classes": "variant=outline size=lg (default)", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 248, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg (default)", "temIcone": false, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/app/login/page.tsx",
+      "linhas": [8],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button; usa Button em linhas 168, 245 (w-full)"
+    },
+    {
+      "arquivo": "src/app/login/redefinir/page.tsx",
+      "linhas": [9, 151],
+      "tipo": "Button shadcn",
+      "variant": "primary",
+      "size": "lg",
+      "classes": "variant=primary size=lg (default) mt-2 w-full type=submit",
+      "usaWFull": true,
+      "temIcone": false,
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/login/recuperar/page.tsx",
+      "linhas": [8],
+      "tipo": "Button shadcn import",
+      "observacao": "Importa Button; usa Button com w-full nas linhas 89 e 121"
+    },
+    {
+      "arquivo": "src/app/design-system/page.tsx",
+      "linhas": [21, 153, 157, 261, 265, 269, 273, 274, 278, 282, 283, 284, 285, 286, 292, 293, 349, 350, 408, 491, 505, 508, 521, 524, 535],
+      "tipo": "Button shadcn (página de demonstração)",
+      "detalhes": [
+        {"linha": 153, "variant": "primary", "size": "lg", "classes": "variant=primary size=lg", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 157, "variant": "secondary", "size": "lg", "classes": "variant=secondary size=lg", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 261, "variant": "primary", "size": "lg", "classes": "variant=primary", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 265, "variant": "secondary", "size": "lg", "classes": "variant=secondary", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 269, "variant": "outline", "size": "lg", "classes": "variant=outline", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 273, "variant": "ghost", "size": "lg", "classes": "variant=ghost", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 274, "variant": "destructive", "size": "lg", "classes": "variant=destructive", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 278, "variant": "link", "size": "lg", "classes": "variant=link", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 282, "variant": "primary", "size": "sm", "classes": "size=sm", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 283, "variant": "primary", "size": "md", "classes": "size=md", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 284, "variant": "primary", "size": "lg", "classes": "size=lg", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 285, "variant": "primary", "size": "xl", "classes": "size=xl", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 286, "variant": "primary", "size": "icon", "classes": "size=icon", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 292, "variant": "primary", "size": "lg", "classes": "disabled", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 293, "variant": "primary", "size": "xl", "classes": "bg-status-free hover:bg-status-free/90", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 349, "variant": "primary", "size": "md", "classes": "size=md", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 350, "variant": "ghost", "size": "md", "classes": "variant=ghost size=md", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 408, "variant": "primary", "size": "md", "classes": "w-full size=md", "usaWFull": true, "temIcone": true, "estaEmGrupo": false},
+        {"linha": 491, "variant": "destructive", "size": "lg", "classes": "variant=destructive", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 505, "variant": "ghost", "size": "lg", "classes": "variant=ghost", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 508, "variant": "destructive", "size": "lg", "classes": "variant=destructive", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 521, "variant": "secondary", "size": "lg", "classes": "variant=secondary", "temIcone": false, "estaEmGrupo": true},
+        {"linha": 524, "variant": "secondary", "size": "lg", "classes": "variant=secondary", "temIcone": true, "estaEmGrupo": true},
+        {"linha": 535, "variant": "secondary", "size": "lg", "classes": "variant=secondary", "temIcone": true, "estaEmGrupo": true}
+      ]
+    },
+    {
+      "arquivo": "src/components/ui/alert-dialog.tsx",
+      "linhas": [6, 91, 103],
+      "tipo": "buttonVariants (não Button diretamente)",
+      "detalhes": [
+        {"linha": 91, "classes": "buttonVariants() — usa primary padrão"},
+        {"linha": 103, "classes": "buttonVariants({ variant: 'outline' }) — usa outline"}
+      ]
+    },
+    {
+      "arquivo": "src/components/ui/sonner.tsx",
+      "linhas": [24, 25],
+      "tipo": "Classes CSS inline para botões de toast (não usa componente Button)",
+      "detalhes": [
+        {"linha": 24, "classes": "actionButton: rounded-lg bg-primary text-primary-foreground"},
+        {"linha": 25, "classes": "cancelButton: rounded-lg bg-secondary text-secondary-foreground"}
+      ]
+    }
+  ],
+  "botoesHTMLNativos": [
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 69,
+      "classes": "ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border lg:hidden",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Toggle menu mobile (hamburger)"
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/painel.tsx",
+      "linha": 459,
+      "classes": "rounded-full border px-3 py-1 text-xs (com variação condicional: border-primary-500 bg-primary-50 text-primary-700 ou border-border text-muted-foreground)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Toggle de módulos habilitados"
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/construtor-planos.tsx",
+      "linha": 321,
+      "classes": "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors (com variação: border-primary bg-primary-50 text-primary-700 ou border-border text-muted-foreground hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Toggle de módulos incluídos"
+    },
+    {
+      "arquivo": "src/app/superadmin/copiloto/_components/copiloto-supremo.tsx",
+      "linha": 175,
+      "classes": "flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Atalho de envio de mensagem"
+    },
+    {
+      "arquivo": "src/app/admin/relatorios/page.tsx",
+      "linha": 181,
+      "classes": "rounded-lg px-4 py-2 text-sm font-semibold transition-colors (com variação: bg-card text-foreground shadow-soft ou text-muted-foreground hover:text-foreground)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de período do relatório"
+    },
+    {
+      "arquivo": "src/app/admin/fiscal/page.tsx",
+      "linha": 263,
+      "classes": "flex w-full flex-col gap-2 p-4 text-left transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Item de lista de documentos fiscais"
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "linha": 254,
+      "classes": "flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Atalho de envio de mensagem"
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "linha": 284,
+      "classes": "rounded p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Botão de remover anexo"
+    },
+    {
+      "arquivo": "src/app/admin/estoque/_components/estoque-fotos.tsx",
+      "linha": 127,
+      "classes": "flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-secondary/40 transition-colors hover:border-primary/50 hover:bg-secondary",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Upload de foto (placeholder)"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-produtos.tsx",
+      "linha": 493,
+      "classes": "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-opacity hover:opacity-80 (com variação: bg-status-free-bg text-status-free border-status-free-border ou bg-status-occupied-bg text-status-occupied border-status-occupied-border)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Toggle ativo/inativo do produto"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-produtos.tsx",
+      "linha": 751,
+      "classes": "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-card px-6 py-10 text-center transition-colors hover:border-primary/40 hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 disabled:opacity-60",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Upload de cardápio (área de drop)"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-impressoras.tsx",
+      "linha": 561,
+      "classes": "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-transparent text-muted-foreground hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Toggle de destinos/funções da impressora"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregadores.tsx",
+      "linha": 193,
+      "classes": "inline-flex items-center gap-1.5 rounded-full border border-status-free-border bg-status-free-bg px-2.5 py-0.5 text-xs font-semibold text-status-free hover:opacity-80",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Badge de status vinculado (clique para desvincular)"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregadores.tsx",
+      "linha": 210,
+      "classes": "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold hover:opacity-80 (com variação: bg-status-free-bg text-status-free border-status-free-border ou bg-status-occupied-bg text-status-occupied border-status-occupied-border)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Toggle ativo/inativo do entregador"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linha": 90,
+      "classes": "flex h-12 items-center justify-center rounded-xl border-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de tipo de pedido (balcão/delivery/retirada)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linha": 156,
+      "classes": "flex h-12 items-center justify-center rounded-xl border-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de forma de pagamento"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 220,
+      "classes": "relative rounded-xl border-2 p-3 text-center text-sm font-semibold transition-colors (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de tamanho da pizza"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 283,
+      "classes": "absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Limpar busca de sabor"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 315,
+      "classes": "ml-0.5",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Remover sabor selecionado"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 341,
+      "classes": "flex items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-colors (com variação: border-primary bg-primary-50 text-primary-700 ou cursor-not-allowed ou border-border bg-card hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Item de sabor na lista"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 392,
+      "classes": "flex h-7 w-7 items-center justify-center rounded-full border text-muted-foreground hover:bg-secondary",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Diminuir adicional"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 402,
+      "classes": "flex h-7 w-7 items-center justify-center rounded-full border (com variação: border-primary bg-primary-50 text-primary ou text-muted-foreground hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Aumentar/Adicionar adicional"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 429,
+      "classes": "flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground hover:bg-secondary",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Diminuir quantidade"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linha": 437,
+      "classes": "flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground hover:bg-secondary",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Aumentar quantidade"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pagamento-dialog.tsx",
+      "linha": 196,
+      "classes": "flex h-12 items-center justify-center rounded-xl border-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de forma de pagamento"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/delivery-view.tsx",
+      "linha": 839,
+      "classes": "flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm hover:bg-secondary",
+      "usaWFull": true,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Item de resultado de busca de cliente"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/catalogo-produtos.tsx",
+      "linha": 98,
+      "classes": "absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Limpar pesquisa"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/catalogo-produtos.tsx",
+      "linha": 112,
+      "classes": "shrink-0 rounded-xl border-2 px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Categoria 'Todos'"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/catalogo-produtos.tsx",
+      "linha": 129,
+      "classes": "shrink-0 rounded-xl border-2 px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Categoria individual"
+    },
+    {
+      "arquivo": "src/app/pdv/page.tsx",
+      "linha": 294,
+      "classes": "flex h-12 items-center justify-center rounded-xl border-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: border-primary bg-primary-50 text-primary-700 ou border-border bg-card text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": true,
+      "funcao": "Seleção de forma de pagamento"
+    },
+    {
+      "arquivo": "src/app/login/page.tsx",
+      "linha": 177,
+      "classes": "mb-1 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Botão 'Trocar e-mail'"
+    },
+    {
+      "arquivo": "src/app/login/page.tsx",
+      "linha": 218,
+      "classes": "absolute inset-y-0 right-0 flex w-14 items-center justify-center text-muted-foreground transition-colors duration-150 hover:text-foreground",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Mostrar/ocultar senha"
+    },
+    {
+      "arquivo": "src/app/login/redefinir/page.tsx",
+      "linha": 116,
+      "classes": "absolute inset-y-0 right-0 flex w-14 items-center justify-center text-muted-foreground transition-colors duration-150 hover:text-foreground",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Mostrar/ocultar senha"
+    },
+    {
+      "arquivo": "src/app/atendimento/page.tsx",
+      "linha": 254,
+      "classes": "flex flex-col gap-1 rounded-xl border p-3 text-left transition-colors (com variação: border-primary bg-primary/5 ou border-border hover:bg-muted/50)",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Item de conversa na lista"
+    },
+    {
+      "arquivo": "src/app/garcom/_components/catalogo-produtos.tsx",
+      "linha": 119,
+      "classes": "absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Limpar pesquisa"
+    },
+    {
+      "arquivo": "src/components/patterns/table-card.tsx",
+      "linha": 38,
+      "classes": "flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-4 text-center transition-transform hover:-translate-y-0.5 hover:shadow-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15",
+      "usaWFull": true,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Card de mesa clicável (TableCard)"
+    },
+    {
+      "arquivo": "src/components/layout/sidebar.tsx",
+      "linha": 142,
+      "classes": "flex h-14 items-center gap-3 rounded-xl px-4 text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10 (com variação: bg-primary text-primary-foreground shadow-soft ou text-foreground/80 hover:bg-secondary)",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Item de navegação na sidebar"
+    },
+    {
+      "arquivo": "src/components/layout/sidebar.tsx",
+      "linha": 161,
+      "classes": "mb-2 flex h-14 items-center gap-3 rounded-xl border border-border px-4 text-base font-medium text-foreground/80 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Botão 'Alterar senha'"
+    },
+    {
+      "arquivo": "src/components/layout/sidebar.tsx",
+      "linha": 168,
+      "classes": "flex h-14 items-center gap-3 rounded-xl border border-border px-4 text-base font-medium text-foreground/80 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/10",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": true,
+      "funcao": "Botão 'Sair do sistema'"
+    }
+  ],
+  "linksEstilizados": [
+    {
+      "arquivo": "src/components/patterns/module-card.tsx",
+      "linha": 22,
+      "tipo": "Link (next/link) estilizado como card clicável",
+      "classes": "group flex flex-col gap-6 rounded-2xl border border-border bg-card p-6 text-left shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted focus-visible:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:p-7",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Card de navegação de módulo"
+    },
+    {
+      "arquivo": "src/app/login/redefinir/page.tsx",
+      "linha": 166,
+      "tipo": "Link (next/link) estilizado como link de texto",
+      "classes": "font-medium text-primary hover:underline underline-offset-4",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Link 'Voltar para o login'"
+    },
+    {
+      "arquivo": "src/app/login/recuperar/page.tsx",
+      "linha": 131,
+      "tipo": "Link (next/link) estilizado como link de texto",
+      "classes": "font-medium text-primary hover:underline underline-offset-4",
+      "usaWFull": false,
+      "temIcone": false,
+      "estaEmGrupo": false,
+      "funcao": "Link 'Voltar para o login'"
+    },
+    {
+      "arquivo": "src/app/entregador/page.tsx",
+      "linha": 312,
+      "tipo": "<a> dentro de Button asChild (híbrido)",
+      "classes": "Conteúdo do <a>: ScanLine icon + 'Ir para Escanear'",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Link de navegação para escanear"
+    },
+    {
+      "arquivo": "src/app/entregador/page.tsx",
+      "linha": 485,
+      "tipo": "<a> dentro de Button asChild (híbrido)",
+      "classes": "Conteúdo do <a>: MapPin icon + 'Abrir localização'",
+      "usaWFull": false,
+      "temIcone": true,
+      "estaEmGrupo": false,
+      "funcao": "Link para Google Maps"
+    }
+  ],
+  "ctaLinks": [
+    {
+      "arquivo": "src/app/_components/landing/primitivos.tsx",
+      "linha": 64,
+      "tipo": "<a> estilizado como botão (CtaLink)",
+      "classes": "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300",
+      "variantes": {
+        "primary": "pf-glow bg-brand text-brand-foreground hover:brightness-110 hover:-translate-y-0.5",
+        "outline": "border border-border bg-card/60 text-foreground backdrop-blur hover:border-brand/50 hover:-translate-y-0.5",
+        "ghost": "text-muted-foreground hover:text-foreground"
+      },
+      "observacao": "Componente reutilizável usado na landing page"
+    },
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 65,
+      "tipo": "CtaLink (desktop)",
+      "classes": "px-5 py-2.5 (adicionado ao CtaLink)",
+      "estaEmGrupo": true
+    },
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 96,
+      "tipo": "CtaLink (mobile menu)",
+      "classes": "w-full (adicionado ao CtaLink)",
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/_components/landing/planos.tsx",
+      "linha": 66,
+      "tipo": "CtaLink (CTA principal dos planos)",
+      "classes": "adicionado ao CtaLink"
+    },
+    {
+      "arquivo": "src/app/_components/landing/planos.tsx",
+      "linha": 133,
+      "tipo": "CtaLink (CTA do card de plano com w-full)",
+      "classes": "mt-8 w-full",
+      "usaWFull": true
+    },
+    {
+      "arquivo": "src/app/_components/landing/planos.tsx",
+      "linha": 162,
+      "tipo": "CtaLink (CTA 'Começar agora')",
+      "classes": "adicionado ao CtaLink"
+    },
+    {
+      "arquivo": "src/app/_components/landing/planos.tsx",
+      "linha": 163,
+      "tipo": "CtaLink (CTA 'Entrar')",
+      "classes": "adicionado ao CtaLink"
+    }
+  ],
+  "linksAnalisados": [
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 33,
+      "tipo": "<a> de logo",
+      "classes": "flex min-w-0 items-center gap-2.5",
+      "ehBotao": false,
+      "funcao": "Logo/nome do marca"
+    },
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 53,
+      "tipo": "<a> de navegação",
+      "classes": "text-sm text-muted-foreground transition-colors hover:text-foreground",
+      "ehBotao": false,
+      "funcao": "Link de navegação na landing"
+    },
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 84,
+      "tipo": "<a> de navegação mobile",
+      "classes": "border-b border-border/60 py-3 text-sm text-muted-foreground",
+      "ehBotao": false,
+      "funcao": "Link de navegação mobile"
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "linha": 455,
+      "tipo": "<a> de anexo de imagem",
+      "classes": "block",
+      "ehBotao": false,
+      "funcao": "Link para anexo de imagem"
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "linha": 465,
+      "tipo": "<a> de anexo de documento (estilizado como botão)",
+      "classes": "inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary",
+      "ehBotao": true,
+      "funcao": "Link para documento anexo",
+      "estaEmGrupo": false
+    },
+    {
+      "arquivo": "src/app/entregador/page.tsx",
+      "linha": 312,
+      "tipo": "<a> dentro de Button asChild",
+      "classes": "Gerenciado pelo Button pai",
+      "ehBotao": true,
+      "funcao": "Link para escanear"
+    },
+    {
+      "arquivo": "src/app/entregador/page.tsx",
+      "linha": 485,
+      "tipo": "<a> dentro de Button asChild",
+      "classes": "Gerenciado pelo Button pai",
+      "ehBotao": true,
+      "funcao": "Link para Google Maps"
+    }
+  ],
+  "classesCSSCustomizadas": {
+    "globals.css": {
+      "naoPossuiClassesBotao": true,
+      "observacao": "Nenhuma classe CSS customizada de botão (btn, button, botao) encontrada no globals.css"
+    },
+    "tailwind.config.ts": {
+      "naoPossuiClassesBotao": true,
+      "observacao": "Nenhuma classe ou extensão customizada de botão no tailwind.config.ts"
+    },
+    "sonnerButtonStyles": {
+      "actionButton": "rounded-lg bg-primary text-primary-foreground",
+      "cancelButton": "rounded-lg bg-secondary text-secondary-foreground"
+    }
+  },
+  "arquivosQueImportamButtonMasUsamHTML": [
+    {
+      "arquivo": "src/app/admin/relatorios/page.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": 181
+    },
+    {
+      "arquivo": "src/app/admin/fiscal/page.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": 263
+    },
+    {
+      "arquivo": "src/app/admin/copiloto/_components/copiloto-empresa.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": [254, 284]
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-produtos.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": [493, 751]
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-impressoras.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": 561
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregadores.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": [193, 210]
+    },
+    {
+      "arquivo": "src/app/garcom/_components/catalogo-produtos.tsx",
+      "importaButton": true,
+      "usaButtonShadcn": true,
+      "usaButtonHTML": true,
+      "linhaHTML": 119
+    },
+    {
+      "arquivo": "src/app/pdv/_components/catalogo-produtos.tsx",
+      "importaButton": false,
+      "usaButtonShadcn": false,
+      "usaButtonHTML": true,
+      "linhaHTML": [98, 112, 129]
+    }
+  ],
+  "botoesWFull": [
+    {
+      "arquivo": "src/components/patterns/produto-card.tsx",
+      "linha": 120,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/components/patterns/floating-cart-bar.tsx",
+      "linha": 22,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linha": 195,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linha": 206,
+      "componente": "Button shadcn",
+      "variant": "outline",
+      "size": "md"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/caixa-view.tsx",
+      "linha": 163,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/login/redefinir/page.tsx",
+      "linha": 151,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/login/page.tsx",
+      "linha": "168, 245",
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/login/recuperar/page.tsx",
+      "linha": "89, 121",
+      "componente": "Button shadcn",
+      "variant": "primary/outline",
+      "size": "lg"
+    },
+    {
+      "arquivo": "src/app/design-system/page.tsx",
+      "linha": 408,
+      "componente": "Button shadcn",
+      "variant": "primary",
+      "size": "md"
+    },
+    {
+      "arquivo": "src/app/entregador/offline/page.tsx",
+      "linha": 154,
+      "componente": "Button shadcn",
+      "variant": "outline",
+      "size": "lg",
+      "classes": "w-full sm:w-fit"
+    },
+    {
+      "arquivo": "src/app/_components/landing/navbar.tsx",
+      "linha": 96,
+      "componente": "CtaLink",
+      "classes": "w-full (no CtaLink mobile)"
+    },
+    {
+      "arquivo": "src/app/_components/landing/planos.tsx",
+      "linha": 133,
+      "componente": "CtaLink",
+      "classes": "mt-8 w-full"
+    }
+  ],
+  "botoesEmGrupo": [
+    {
+      "arquivo": "src/app/superadmin/_components/painel.tsx",
+      "linhas": [182, 186],
+      "tipo": "2 botões lado a lado: outline + outline (Atualizar + Sair)"
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/painel.tsx",
+      "linhas": [360, 363],
+      "tipo": "2 botões lado a lado: ghost + destructive (Cancelar + Excluir)"
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/construtor-planos.tsx",
+      "linhas": [265, 269],
+      "tipo": "2 botões lado a lado: outline + ghost (Editar + Ativar/Inativar)"
+    },
+    {
+      "arquivo": "src/app/superadmin/_components/construtor-planos.tsx",
+      "linhas": [383, 386],
+      "tipo": "2 botões lado a lado: ghost + primary (Cancelar + Salvar)"
+    },
+    {
+      "arquivo": "src/app/superadmin/copiloto/_components/copiloto-supremo.tsx",
+      "linhas": "293+296, 397+401, 466+470",
+      "tipo": "Pares de primary+outline (Confirmar+Cancelar)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linhas": [192, 202],
+      "tipo": "2 botões w-full empilhados: primary + outline (Finalizar + Limpar)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pizza-picker-dialog.tsx",
+      "linhas": [462, 465],
+      "tipo": "2 botões lado a lado: outline + primary (Cancelar + Confirmar)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/pagamento-dialog.tsx",
+      "linhas": [248, 251],
+      "tipo": "2 botões lado a lado: ghost + primary (Cancelar + Confirmar)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/nfce-dialog.tsx",
+      "linhas": [255, 259],
+      "tipo": "2 botões lado a lado: outline + primary (Imprimir + Concluir)"
+    },
+    {
+      "arquivo": "src/app/cozinha/page.tsx",
+      "linhas": [274, 278],
+      "tipo": "2 botões lado a lado: outline + outline (Fila + Atualizar)"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/catalogo-produtos.tsx",
+      "linhas": [112, 129],
+      "tipo": "Navegação de categorias: botões toggle lado a lado"
+    },
+    {
+      "arquivo": "src/app/pdv/page.tsx",
+      "linhas": [294],
+      "tipo": "Grid de 2 colunas: botões de pagamento lado a lado"
+    },
+    {
+      "arquivo": "src/app/admin/relatorios/page.tsx",
+      "linhas": [181],
+      "tipo": "Segment control: botões de período lado a lado"
+    },
+    {
+      "arquivo": "src/app/pdv/_components/resumo-pedido.tsx",
+      "linhas": [90, 156],
+      "tipo": "Grid 3 colunas (tipo pedido) + Grid 2 colunas (pagamento)"
+    },
+    {
+      "arquivo": "src/app/admin/configuracoes/_components/config-entregadores.tsx",
+      "linhas": [193, 210],
+      "tipo": "Botões toggle de status lado a lado na tabela"
+    },
+    {
+      "arquivo": "src/components/patterns/item-pedido-row.tsx",
+      "linhas": [55, 70],
+      "tipo": "2 botões icon lado a lado (- e + de quantidade)"
+    },
+    {
+      "arquivo": "src/components/impressao/fila-impressao.tsx",
+      "linhas": [177, 183, 187],
+      "tipo": "3 botões lado a lado: Visualizar + Reimprimir + Cancelar"
+    },
+    {
+      "arquivo": "src/app/garcom/page.tsx",
+      "linhas": [181, 184],
+      "tipo": "2 botões lado a lado: outline + primary (Cancelar + Abrir mesa)"
+    },
+    {
+      "arquivo": "src/app/garcom/mesa/[id]/page.tsx",
+      "linhas": [245, 248],
+      "tipo": "2 botões lado a lado: outline + primary"
+    },
+    {
+      "arquivo": "src/components/layout/sidebar.tsx",
+      "linhas": [161, 168],
+      "tipo": "2 botões empilhados: Alterar senha + Sair"
+    },
+    {
+      "arquivo": "src/app/design-system/page.tsx",
+      "linhas": "261-278, 282-286, 292-293, 349-350, 505-516",
+      "tipo": "Grupos de demonstração de todos os variantes e tamanhos"
+    }
+  ]
+}
