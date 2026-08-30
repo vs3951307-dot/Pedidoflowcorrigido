@@ -39,7 +39,11 @@ export const GET = comTratamentoDeErro("catalogo.GET", async () => {
         },
         precos: {
           select: {
-            tamanho: { select: { id: true, nome: true, fatorPreco: true } },
+            // `maxSabores` PRECISA estar aqui: o map abaixo lê
+            // `pt.tamanho.maxSabores`, e sem o campo no select ele vinha
+            // sempre `undefined` — o front caía no fallback (2) e a
+            // Família nunca aceitava 3 sabores.
+            tamanho: { select: { id: true, nome: true, fatorPreco: true, maxSabores: true } },
             valor: true,
           },
         },
@@ -57,10 +61,52 @@ export const GET = comTratamentoDeErro("catalogo.GET", async () => {
       select: { id: true, nome: true, preco: true, categoriaId: true },
     });
 
+    // -----------------------------------------------------------------
+    // Lista GLOBAL de sabores, com o preço de cada um em cada tamanho.
+    //
+    // POR QUE ISTO É NECESSÁRIO: no cadastro, "Pizzas salgadas" e "Pizzas
+    // especiais" são PRODUTOS diferentes, cada um com seus sabores. O
+    // seletor do PDV só mostrava `produto.sabores` — ou seja, dentro de
+    // "Pizzas salgadas" era impossível escolher um sabor especial como
+    // segunda metade. Meio a meio tradicional + especial, que é o pedido
+    // mais comum de uma pizzaria, simplesmente não existia na tela.
+    //
+    // O backend já resolve sabor por NOME em qualquer produto
+    // (`precoPorSaborNome` em criar-pedido.ts e em mesas/[id]/itens), então
+    // ele sempre aceitou a mistura. Faltava a UI ter os dados.
+    //
+    // `precoPorTamanho` é indexado pelo NOME do tamanho (Média/Grande/
+    // Família) porque é assim que o servidor resolve o preço — o id do
+    // tamanho pertence ao produto, o nome é compartilhado.
+    const saboresDisponiveis = new Map<
+      string,
+      { id: string; nome: string; tipo: string; precoPorTamanho: Record<string, number>; produtoNome: string }
+    >();
+    for (const p of produtos as any[]) {
+      if (!p.sabores || p.sabores.length === 0) continue;
+      const precoPorTamanho: Record<string, number> = {};
+      for (const pt of p.precos ?? []) precoPorTamanho[pt.tamanho.nome] = pt.valor;
+      for (const ps of p.sabores) {
+        // Chave pelo nome em minúsculas: é a mesma chave que o servidor usa
+        // para achar o preço. Sabor repetido em dois produtos fica com o
+        // primeiro — igual ao comportamento do servidor.
+        const chave = String(ps.sabor.nome).toLowerCase();
+        if (saboresDisponiveis.has(chave)) continue;
+        saboresDisponiveis.set(chave, {
+          id: ps.sabor.id,
+          nome: ps.sabor.nome,
+          tipo: ps.sabor.tipo,
+          precoPorTamanho,
+          produtoNome: p.nome,
+        });
+      }
+    }
+
     return NextResponse.json({
       categorias: categorias.map((c) => c.nome),
       categoriasDetalhadas: categorias,
       adicionais,
+      saboresDisponiveis: [...saboresDisponiveis.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
       produtos: (produtos as unknown[]).map((p: any) => {
         const { categoria, sabores, precos, ...resto } = p;
         return {

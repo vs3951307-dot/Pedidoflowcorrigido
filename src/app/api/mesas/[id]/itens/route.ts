@@ -157,10 +157,25 @@ export const POST = comTratamentoDeErro("mesas.id.itens.POST", async (req: NextR
         let maxSabores = 1;
         if (tamanhoNome) {
           const pt = produto.precos.find((p) => p.tamanho.nome === tamanhoNome);
-          if (pt) {
-            base = pt.valor;
-            maxSabores = pt.tamanho.maxSabores ?? 1;
+          // ANTES: `if (pt)` sem `else`. Quando o tamanho enviado não batia
+          // com nenhum preço do produto (cardápio renomeado, produto sem
+          // PrecoTamanho), a rota seguia com `base = produto.preco` e
+          // `maxSabores = 1` — e a pizza meio a meio era recusada com
+          // "Este tamanho aceita no máximo 1 sabore(s)", que não tem nada a
+          // ver com a causa real. Agora o erro diz o que está errado.
+          if (!pt) {
+            throw new ErroComanda(
+              `Tamanho "${tamanhoNome}" não está cadastrado para "${produto.nome}". Cadastre o preço deste tamanho em Configurações → Produtos.`
+            );
           }
+          base = pt.valor;
+          maxSabores = pt.tamanho.maxSabores ?? 1;
+        } else if (sabores.length > 1) {
+          // Pizza com vários sabores exige tamanho: sem ele não há preço por
+          // sabor nem limite para validar.
+          throw new ErroComanda(
+            `Escolha o tamanho de "${produto.nome}" antes de definir mais de um sabor.`
+          );
         }
 
         let precoUnit: number;

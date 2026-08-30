@@ -21,6 +21,7 @@ const CATALOGO_FALLBACK: CatalogoApi = {
   categoriasDetalhadas: [],
   produtos: [],
   adicionais: [],
+  saboresDisponiveis: [],
 };
 
 interface ConfigPizza {
@@ -142,6 +143,8 @@ export function CatalogoProdutos({ onAdicionar }: CatalogoProdutosProps) {
                 produto={produto}
                 adicionais={adicionais}
                 acrescimoPorSaborPremium={configPizza.dados.acrescimoPorSaborPremium}
+                permitirMisturarDoceSalgada={configPizza.dados.permitirMisturarDoceSalgada}
+                saboresDisponiveis={catalogo.dados.saboresDisponiveis}
                 onAdicionar={(produto, escolha) => {
                   onAdicionar(produto, {
                     tamanhoId: escolha?.tamanhoId ?? "",

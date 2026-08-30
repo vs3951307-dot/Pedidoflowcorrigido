@@ -6,13 +6,16 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatBRL } from "@/lib/utils";
-import type { Produto, AdicionalPizza, SaborPizza, SelecaoPizza } from "@/lib/catalogo";
+import type { Produto, AdicionalPizza, SaborPizza, SaborDisponivel, SelecaoPizza } from "@/lib/catalogo";
 import { PizzaPickerDialog } from "@/app/pdv/_components/pizza-picker-dialog";
 
 interface ProdutoCardProps {
   produto: Produto;
   adicionais?: AdicionalPizza[];
   acrescimoPorSaborPremium?: number;
+  permitirMisturarDoceSalgada?: boolean;
+  /** Catálogo global de sabores (para meio a meio entre produtos). */
+  saboresDisponiveis?: SaborDisponivel[];
   onAdicionar: (produto: Produto, escolha?: SelecaoPizza) => void;
   className?: string;
 }
@@ -21,6 +24,8 @@ export function ProdutoCard({
   produto,
   adicionais = [],
   acrescimoPorSaborPremium,
+  permitirMisturarDoceSalgada,
+  saboresDisponiveis,
   onAdicionar,
   className,
 }: ProdutoCardProps) {
@@ -111,6 +116,8 @@ export function ProdutoCard({
         produto={produto}
         adicionais={adicionais}
         acrescimoPorSaborPremium={acrescimoPorSaborPremium}
+        permitirMisturarDoceSalgada={permitirMisturarDoceSalgada}
+        saboresDisponiveis={saboresDisponiveis}
         onConfirmar={confirmarEscolha}
       />
     </div>

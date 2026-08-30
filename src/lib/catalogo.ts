@@ -40,6 +40,27 @@ export interface SaborPizza {
   tipo?: "tradicional" | "especial" | "doce";
 }
 
+/**
+ * Sabor no catálogo GLOBAL da empresa (`GET /api/catalogo` →
+ * `saboresDisponiveis`), com o preço em cada tamanho.
+ *
+ * POR QUE EXISTE: no cadastro, "Pizzas salgadas" e "Pizzas especiais" são
+ * produtos distintos, cada um com seus próprios sabores. Usando só
+ * `produto.sabores`, o PDV não conseguia montar meio a meio tradicional +
+ * especial — o pedido mais comum de pizzaria. E, como `SaborPizza` não
+ * carrega preço, a tela era obrigada a assumir que todo sabor custava o
+ * preço do produto aberto, divergindo do valor que o servidor cobrava.
+ *
+ * `precoPorTamanho` é indexado pelo NOME do tamanho ("Média", "Grande",
+ * "Família"), que é a chave que o servidor usa. O id do tamanho pertence
+ * a um produto específico e não serve para cruzar produtos.
+ */
+export interface SaborDisponivel extends SaborPizza {
+  precoPorTamanho: Record<string, number>;
+  /** Produto de origem — só para exibir ("Especial", "Doce") na lista. */
+  produtoNome: string;
+}
+
 export interface TamanhoPizza {
   id: string;
   nome: string;
@@ -125,6 +146,12 @@ export interface CatalogoApi {
   categoriasDetalhadas: CategoriaDetalhada[];
   produtos: Produto[];
   adicionais: AdicionalPizza[];
+  /**
+   * Todos os sabores da empresa com preço por tamanho — permite montar
+   * meio a meio entre produtos diferentes (tradicional + especial).
+   * Opcional para não quebrar chamadas antigas do endpoint.
+   */
+  saboresDisponiveis?: SaborDisponivel[];
 }
 
 /**
