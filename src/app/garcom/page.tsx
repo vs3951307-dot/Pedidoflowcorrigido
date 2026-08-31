@@ -119,7 +119,7 @@ export default function GarcomMesasPage() {
               description="Escolha outro filtro para ver as demais mesas do salão."
             />
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {mesasFiltradas.map((mesa) => (
                 <TableCard
                   key={mesa.id}
@@ -128,6 +128,7 @@ export default function GarcomMesasPage() {
                   elapsedMinutes={elapsedDe(mesa, agora)}
                   pulse={mesaPulso?.id === mesa.id}
                   onClick={() => handleClickMesa(mesa)}
+                  compactMobile
                 />
               ))}
             </div>

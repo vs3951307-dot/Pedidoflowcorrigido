@@ -16,6 +16,9 @@ interface TableCardProps {
   pulse?: boolean;
   onClick?: () => void;
   className?: string;
+  /** Versão compacta apenas em telas pequenas (celular) — para grades
+   * densas como a do Garçom. No desktop (≥md) mantém o layout normal. */
+  compactMobile?: boolean;
 }
 
 /**
@@ -31,6 +34,7 @@ export function TableCard({
   pulse,
   onClick,
   className,
+  compactMobile = false,
 }: TableCardProps) {
   const cfg = STATUS_CONFIG[status];
 
@@ -38,20 +42,36 @@ export function TableCard({
     <button
       onClick={onClick}
       className={cn(
-        "flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-4 text-center transition-transform",
+        "flex w-full flex-col items-center justify-center border-2 text-center transition-transform",
+        compactMobile
+          ? "aspect-square gap-0.5 rounded-xl p-1.5 sm:aspect-[4/3] sm:gap-1.5 sm:rounded-2xl sm:p-4"
+          : "aspect-[4/3] gap-1.5 rounded-2xl p-4",
         "hover:-translate-y-0.5 hover:shadow-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15",
         cfg.bg,
         cfg.border,
         className
       )}
     >
-      <Armchair className={cn("h-6 w-6", cfg.text)} />
-      <span className={cn("text-3xl font-bold tracking-[-0.01em] tabular", cfg.text)}>
+      <Armchair
+        className={cn(
+          "h-4 w-4 sm:h-6 sm:w-6",
+          compactMobile && "hidden sm:block",
+          cfg.text
+        )}
+      />
+      <span
+        className={cn(
+          "font-bold tracking-[-0.01em] tabular",
+          compactMobile ? "text-xl sm:text-3xl" : "text-3xl",
+          cfg.text
+        )}
+      >
         {String(number).padStart(2, "0")}
       </span>
       <span
         className={cn(
-          "text-sm font-semibold uppercase tracking-wide",
+          "font-semibold uppercase tracking-wide",
+          compactMobile ? "text-[9px] sm:text-sm" : "text-sm",
           cfg.text,
           pulse && "animate-ember-pulse rounded-full"
         )}
@@ -59,13 +79,25 @@ export function TableCard({
         {cfg.label}
       </span>
       {typeof elapsedMinutes === "number" && (
-        <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+        <span
+          className={cn(
+            "flex items-center gap-1 font-medium text-muted-foreground",
+            compactMobile ? "hidden text-[9px] sm:flex sm:text-xs" : "text-xs"
+          )}
+        >
           <Clock className="h-3.5 w-3.5" />
           {formatElapsed(elapsedMinutes)}
         </span>
       )}
       {typeof valor === "number" && valor > 0 && (
-        <span className="text-xs font-bold tabular text-foreground">{formatBRL(valor)}</span>
+        <span
+          className={cn(
+            "font-bold tabular text-foreground",
+            compactMobile ? "text-[9px] sm:text-xs" : "text-xs"
+          )}
+        >
+          {formatBRL(valor)}
+        </span>
       )}
     </button>
   );
