@@ -46,6 +46,9 @@ interface ContextoEmbelezamento {
   loja?: string | null;
   /** Resumo em português de tudo que já foi decidido na conversa. */
   historico?: string | null;
+  /** True se for a PRIMEIRA mensagem da conversa (a saudação oficial do
+   *  motor deve ser mantida literal, sem ser recriada/inflada pela IA). */
+  primeiraMensagem?: boolean;
 }
 
 /**
@@ -140,6 +143,11 @@ export async function embelezarResposta(ctx: ContextoEmbelezamento): Promise<str
     "- TODOS os dados exatos: preços (R$), nomes de produtos/sabores/tamanhos, opções listadas, quantidades, resumo do pedido e palco da conversa (o que está sendo perguntado).",
     "- O MESMO objetivo da resposta original: se ela pergunta o tamanho, pergunte o tamanho; se lista opções, liste as MESMAS opções; se pede confirmação, peça a confirmação.",
     "",
+    "REGRAS DE CUMPRIMENTO (IMPORTANTÍSSIMO — NUNCA quebrar):",
+    "- Se a resposta oficial do sistema JÁ contém uma saudação/apresentação (ex.: 'Olá! Eu sou a Ana, atendente da loja...'), repita-a EXATAMENTE como está (palavra por palavra, com os mesmos nomes e emojis). NÃO crie, adicione, troque ou reescreva o cumprimento.",
+    "- Se a resposta oficial do sistema NÃO contém saudação, NÃO acrescente nenhuma (nada de 'Olá', 'Oi', 'Boa tarde', 'Bem-vindo' nem se apresentar de novo).",
+    "- Em nenhuma hipótese se apresente ou repita 'sou a/o atendente' mais de uma vez na mesma conversa.",
+    "",
     "Como falar como um atendente humano (IMPORTANTE):",
     "- Escreva como quem conversa no WhatsApp: frases curtas, pontuação natural, sem burocracia.",
     "- Use a chama o cliente pelo nome de vez em quando (ex.: 'Beleza, *José*!').",
@@ -157,6 +165,9 @@ export async function embelezarResposta(ctx: ContextoEmbelezamento): Promise<str
     `Item que o cliente está escolhendo agora: ${ctx.itemAtual || "nenhum em montagem"}`,
     `Carrinho já confirmado: ${ctx.estadoResumo || "vazio"}`,
     `Etapa atual: ${ctx.etapa}`,
+    ctx.primeiraMensagem
+      ? "Esta é a PRIMEIRA mensagem da conversa. A saudação/apresentação oficial do sistema abaixo É o primeiro contato: preservá-la literal (nomes e emojis) é obrigatório."
+      : "",
     "",
     `Resposta oficial do sistema (reescreva mantendo os DADOS e o OBJETIVO, melhorando só a NATURALIDADE):`,
     `"${ctx.respostaBase}"`,

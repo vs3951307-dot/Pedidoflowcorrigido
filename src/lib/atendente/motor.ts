@@ -1373,11 +1373,15 @@ export async function receberMensagemWhatsApp(
     if (carrinhoLimpadoPorInatividade) {
       resposta.texto = `Parece que ficamos algum tempo sem conversar, então deixei seu pedido antigo de lado e recomeçamos do zero. 😊\n\n${resposta.texto}`;
     }
-    // IA opcional: reescreve a resposta validada do motor de forma natural
-    // e amigável, SEM inventar dados — os fatos (preços, opções, etapas,
-    // pedido) vêm todos do motor; a IA só melhora o texto. Em qualquer
-    // falha, mantém o texto base do motor.
-    if (iaDisponivel() && !["humana", "encerrada", "criado"].includes(resposta.etapa)) {
+    // Na PRIMEIRA mensagem a IA é pulada: a saudação oficial do motor já é
+    // o texto exato desejado e não pode ser reescrito/inflado pelo modelo
+    // (que tendia a repetir o cumprimento a cada resposta).
+    const primeiraMensagem = conversa.status === "nova";
+    if (
+      !primeiraMensagem &&
+      iaDisponivel() &&
+      !["humana", "encerrada", "criado"].includes(resposta.etapa)
+    ) {
       const itemAtual =
         estado.atual && estado.atual.nome
           ? `${estado.atual.nome}${estado.atual.tamanho ? ` (tamanho ${estado.atual.tamanho.nome})` : ""}${
@@ -1412,6 +1416,7 @@ export async function receberMensagemWhatsApp(
         clienteNome: estado.cliente?.nome ?? null,
         itemAtual,
         historico: historico || null,
+        primeiraMensagem: conversa.status === "nova",
       });
       if (textoBonito) resposta.texto = textoBonito;
     }
