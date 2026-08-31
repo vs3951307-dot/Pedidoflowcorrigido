@@ -244,10 +244,15 @@ export default function MesaPedidoOverlay({
     </div>
   );
 
-  const renderAcoes = () => (
+  const renderAcoes = (handlers?: {
+    onSendKitchen?: () => void;
+    onSave?: () => void;
+    onPrint?: () => void;
+    onFinalize?: () => void;
+  }) => (
     <div className="border-t border-slate-200 bg-slate-50 p-4">
       <button
-        onClick={onSendKitchen}
+        onClick={handlers?.onSendKitchen ?? onSendKitchen}
         disabled={!items.length}
         className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
       >
@@ -257,7 +262,7 @@ export default function MesaPedidoOverlay({
 
       <div className="mt-2.5 grid grid-cols-3 gap-2">
         <button
-          onClick={onSave}
+          onClick={handlers?.onSave ?? onSave}
           className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
         >
           <Save size={17} />
@@ -265,7 +270,7 @@ export default function MesaPedidoOverlay({
         </button>
 
         <button
-          onClick={onPrint}
+          onClick={handlers?.onPrint ?? onPrint}
           className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
         >
           <Printer size={17} />
@@ -273,7 +278,7 @@ export default function MesaPedidoOverlay({
         </button>
 
         <button
-          onClick={onFinalize}
+          onClick={handlers?.onFinalize ?? onFinalize}
           disabled={!items.length}
           className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
         >
@@ -288,7 +293,7 @@ export default function MesaPedidoOverlay({
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] bg-slate-950/55 backdrop-blur-[3px] p-2 md:p-5">
+      <div className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-[3px] p-2 md:p-5">
       <div className="mx-auto flex h-full max-w-[1750px] overflow-hidden rounded-[24px] border border-slate-200 bg-[#f7f8fa] shadow-2xl">
 
         {/* ========================= */}
@@ -523,7 +528,24 @@ export default function MesaPedidoOverlay({
           </div>
           {renderItens()}
           {renderValores()}
-          {renderAcoes()}
+          {renderAcoes({
+            onSendKitchen: () => {
+              setShowMobileDrawer(false);
+              onSendKitchen();
+            },
+            onSave: () => {
+              setShowMobileDrawer(false);
+              onSave();
+            },
+            onPrint: () => {
+              setShowMobileDrawer(false);
+              onPrint();
+            },
+            onFinalize: () => {
+              setShowMobileDrawer(false);
+              onFinalize();
+            },
+          })}
         </div>
       )}
     </aside>
