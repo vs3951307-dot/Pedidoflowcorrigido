@@ -64,8 +64,13 @@ export function comTratamentoDeErro<T extends unknown[]>(
       return await tenantALS.run({ contextoTenant: null }, () => handler(req, ...args));
     } catch (erro) {
       logErro(nomeRota, erro, { url: req.nextUrl?.pathname });
+      // Diagnóstico TEMPORÁRIO: inclui a mensagem REAL (redigida — sem
+      // credenciais/URLs de banco) para destravar a causa de um 500 que
+      // persiste em produção. REVERTER para o texto genérico assim que a
+      // causa for identificada e corrigida.
+      const detalhe = redator(erro instanceof Error ? erro.message : String(erro));
       return NextResponse.json(
-        { erro: "Erro interno. Tente novamente em instantes." },
+        { erro: `Erro interno: ${detalhe}` },
         { status: 500 }
       );
     }
