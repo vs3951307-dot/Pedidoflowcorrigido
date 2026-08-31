@@ -153,7 +153,14 @@ export const POST = comTratamentoDeErro("pedidos.POST", async (req: NextRequest)
   }
 
   // Novo pedido entrou na fila de produção → avisa os painéis KDS.
-  emitirMudancaKds(empresaId);
+  // Em try/catch: o pedido já foi criado no banco — uma falha no aviso em
+  // tempo real (ex.: um listener SSE lançando) não pode transformar uma
+  // criação já concluída com sucesso num "Erro interno" 500.
+  try {
+    emitirMudancaKds(empresaId);
+  } catch (erroKds) {
+    console.warn(`Aviso de mudança KDS falhou para o pedido ${resultado.pedido.id} (pedido já criado):`, erroKds);
+  }
 
   // Impressão automática (PEDIDO 16): a comanda da cozinha sai sempre;
   // balcão/retirada/delivery também imprimem a comanda no caixa.

@@ -37,7 +37,16 @@ export const POST = comTratamentoDeErro("pedidos.pagamento.POST", async (req: Ne
 
   const { pagamento, pedido, quitado, saldoRestante, totalConta, idempotente } = resultado;
 
-  if (quitado && !idempotente) emitirMudancaKds(empresaId);
+  // Aviso em tempo real (KDS/pedido). Em try/catch: a venda já foi paga e
+  // registrada no banco — uma falha no aviso (ex.: listener SSE lançando)
+  // não pode transformar um pagamento já confirmado num 500.
+  if (quitado && !idempotente) {
+    try {
+      emitirMudancaKds(empresaId);
+    } catch (erroKds) {
+      console.warn(`Aviso de mudança KDS falhou para o pedido ${pedido.id} (venda já confirmada):`, erroKds);
+    }
+  }
 
   // Impressão automática do cupom do cliente (PEDIDO 16) — só quando a
   // conta é quitada de fato (impressão parcial não faz sentido aqui) E
@@ -86,9 +95,18 @@ export const POST = comTratamentoDeErro("pedidos.pagamento.POST", async (req: Ne
     }
   }
 
-  const empresaRegistro = await prisma.configuracao.findUnique({
-    where: { empresaId_chave: { empresaId, chave: "empresa" } },
-  });
+  // Carregar os dados da empresa para o cupom do cliente. A venda já
+  // está paga — uma falha nesta consulta de apoio não pode derrubar a
+  // resposta (o restante do cupom é montado no cliente sem este bloco).
+  let empresaRegistro: { valor: string } | null = null;
+  try {
+    empresaRegistro = await prisma.configuracao.findUnique({
+      where: { empresaId_chave: { empresaId, chave: "empresa" } },
+      select: { valor: true },
+    });
+  } catch (erroConfig) {
+    console.warn(`Leitura dos dados da empresa falhou para o pedido ${pedido.id}:`, erroConfig);
+  }
   let empresa: Record<string, string> | null = null;
   if (empresaRegistro) {
     try {
