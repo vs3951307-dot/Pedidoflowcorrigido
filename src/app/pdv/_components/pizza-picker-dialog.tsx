@@ -516,7 +516,7 @@ export function PizzaPickerDialog({
           <div className="flex items-center justify-between rounded-xl bg-secondary/40 p-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm text-muted-foreground">
-                Base {temSabores && saboresEscolhidos.length > 1 ? `· ${saboresEscolhidos.length} sabores` : ""}
+                Base {temSabores && saboresEscolhidos.length > 1 ? ` · ${saboresEscolhidos.length} sabores` : ""}
                 {saboresEscolhidos.filter((s) => s.tipo !== "tradicional").length >= 2 &&
                   ` · +${formatBRL(acrescimoPorSaborPremium)} especiais`}
               </span>
@@ -524,6 +524,22 @@ export function PizzaPickerDialog({
             </div>
             <span className="text-xl font-bold tabular">{impedimento ? "—" : formatBRL(total)}</span>
           </div>
+
+          {/* Dica: por que "Adicionar à mesa" está desabilitado.
+              Botão fica travado até escolher sensores/tamanho — sem dica o
+              usuário acha que o clique não funciona. */}
+          {!impedimento && !podeConfirmar && (
+            <p
+              role="status"
+              className="rounded-xl border border-muted bg-muted/30 p-3 text-center text-sm text-muted-foreground"
+            >
+              {temSabores && saboresEscolhidos.length < 1
+                ? "Selecione ao menos 1 sabor para adicionar à mesa."
+                : temTamanhos && !tamanhoId
+                  ? "Escolha um tamanho para adicionar à mesa."
+                  : "Preencha os campos acima e confirme o item."}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
