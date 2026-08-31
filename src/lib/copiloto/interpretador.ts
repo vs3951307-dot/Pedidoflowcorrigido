@@ -52,29 +52,41 @@ NUNCA invente uma chave que nao esteja no catalogo acima.`;
 
 function escolherViaPalavraChave(pergunta: string): EscolhaConsulta | null {
   const texto = pergunta.toLowerCase();
-  if (texto.includes("compar")) {
-    const dias = texto.includes("semana") ? 7 : 30;
-    return { consulta: "comparativo_periodos", parametros: { dias } };
+  const hoje = texto.includes("hoje") || /\bdia\b/.test(texto) || texto.includes("ontem");
+  const semana = texto.includes("semana");
+  const mes = /\bmês\b/.test(texto) || /\bmes\b/.test(texto) || texto.includes("mês passado") || texto.includes("mes passado");
+
+  // Comparativo entre períodos ("vs", "comparação", "evolução", "variou")
+  if (texto.includes("compar") || texto.includes("comparado") || texto.includes(" vs ") || texto.includes("versus") || /evoluç|variou|diferente do/.test(texto)) {
+    return { consulta: "comparativo_periodos", parametros: { dias: semana ? 7 : mes ? 30 : 30 } };
   }
-  if (texto.includes("entregador") && (texto.includes("mais") || texto.includes("desempenho") || texto.includes("melhor"))) {
+  // Desempenho por entregador
+  if (texto.includes("entregador") && /mais|desempenho|melhor|ranking|rapid|quem entregou/.test(texto)) {
     return { consulta: "desempenho_entregadores", parametros: { dias: 30 } };
   }
-  if (texto.includes("entrega") && !texto.includes("entregador")) {
-    const dias = texto.includes("hoje") ? 1 : texto.includes("semana") ? 7 : 30;
-    return { consulta: "entregas_do_periodo", parametros: { dias } };
+  // Entregas do período (não confundir com "entregador")
+  if ((texto.includes("entrega") || texto.includes("delivery") || texto.includes("motoboy")) && !texto.includes("entregador")) {
+    return { consulta: "entregas_do_periodo", parametros: { dias: hoje ? 1 : semana ? 7 : 30 } };
   }
-  if (texto.includes("atrasad")) return { consulta: "pedidos_atrasados", parametros: {} };
-  if (texto.includes("caixa")) return { consulta: "caixa_aberto_atual", parametros: {} };
-  if (texto.includes("estoque") && (texto.includes("baixo") || texto.includes("faltando"))) {
+  // Pedidos atrasados / esperando / pendentes na cozinha
+  if (texto.includes("atrasad") || texto.includes("esperando") || texto.includes("demoran") || texto.includes("parado") || texto.includes("não saiu") || texto.includes("pendente") || texto.includes("na cozinha")) {
+    return { consulta: "pedidos_atrasados", parametros: {} };
+  }
+  // Situação do caixa aberto
+  if (texto.includes("caixa") || texto.includes("vale quanto") || texto.includes("turno aberto")) {
+    return { consulta: "caixa_aberto_atual", parametros: {} };
+  }
+  // Estoque baixo / faltando / acabou / esgotou
+  if ((texto.includes("estoque") || texto.includes("produto em falta") || texto.includes("faltand") || texto.includes("esgot") || texto.includes("acabou")) && /baixo|faltand|minimo|abaixo|zerou|esgot|acabou|falta/i.test(texto)) {
     return { consulta: "estoque_baixo", parametros: {} };
   }
-  if (texto.includes("mais vendid") || texto.includes("top produto")) {
-    const dias = texto.includes("hoje") ? 1 : texto.includes("semana") ? 7 : 30;
-    return { consulta: "produtos_mais_vendidos", parametros: { dias, limite: 10 } };
+  // Produtos mais vendidos (antes de vendas por período para não conflitar)
+  if (texto.includes("mais vendid") || texto.includes("mais pedid") || texto.includes("top produto") || texto.includes("campe") || texto.includes("mais popular") || texto.includes("produto que mais vende")) {
+    return { consulta: "produtos_mais_vendidos", parametros: { dias: hoje ? 1 : semana ? 7 : 30, limite: 10 } };
   }
-  if (texto.includes("vend") || texto.includes("fatur")) {
-    const dias = texto.includes("hoje") ? 1 : texto.includes("mês") || texto.includes("mes") ? 30 : 7;
-    return { consulta: "vendas_por_periodo", parametros: { dias } };
+  // Vendas / faturamento do período
+  if (texto.includes("vend") || texto.includes("fatur") || texto.includes("receita") || texto.includes("quanto vendeu") || texto.includes("movimento") || texto.includes("lucro")) {
+    return { consulta: "vendas_por_periodo", parametros: { dias: hoje ? 1 : mes ? 30 : semana ? 7 : 7 } };
   }
   return null;
 }
