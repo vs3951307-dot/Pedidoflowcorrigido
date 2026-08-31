@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Banknote, Bike, Package, Printer, Send, ShoppingBag, Trash2, UtensilsCrossed } from "lucide-react";
+import { Banknote, Bike, Package, Printer, Send, ShoppingBag, Trash2, UtensilsCrossed, X } from "lucide-react";
 
 import { PageHeader } from "@/components/patterns/page-header";
 import { Card } from "@/components/ui/card";
@@ -112,6 +112,7 @@ function ModuloBalcao() {
   const [catalogoAberto, setCatalogoAberto] = React.useState(false);
   const [filaAberta, setFilaAberta] = React.useState(false);
   const [confirmarLimpar, setConfirmarLimpar] = React.useState(false);
+  const [comandaAberta, setComandaAberta] = React.useState(false);
 
   const { total: totalPedido, totalItens } = calcularTotais(itens);
 
@@ -183,11 +184,155 @@ function ModuloBalcao() {
     },
   ]);
 
+  const renderComanda = (needsClose?: () => void) => (
+    <>
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {/* Cliente */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="cliente-nome" className="text-sm font-medium text-foreground/90">
+            Cliente (opcional)
+          </label>
+          <div className="relative">
+            <ShoppingBag
+              className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <input
+              id="cliente-nome"
+              type="text"
+              placeholder="Nome do cliente"
+              value={clienteNome}
+              onChange={(e) => definirClienteNome(e.target.value)}
+              className="w-full rounded-xl border border-border pl-12 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+
+        {/* Tipo de pedido */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {["balcao", "viagem", "delivery"].map((tipo) => (
+            <Button
+              key={tipo}
+              type="button"
+              size="sm"
+              variant={tipoPedido === tipo ? "primary" : "outline"}
+              onClick={() => definirTipoPedido(tipo as typeof tipoPedido)}
+            >
+              {tipo === "balcao" ? "Balcão" : tipo === "viagem" ? "Viagem" : "Delivery"}
+            </Button>
+          ))}
+        </div>
+
+        <Separator className="my-4" />
+
+        {/* Itens */}
+        {itens.length === 0 ? (
+          <div className="flex h-40 flex-col items-center justify-center text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <ShoppingBag size={30} className="text-slate-400" />
+            </div>
+            <p className="text-base font-bold text-foreground">Pedido vazio</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Selecione um produto para montar o pedido.
+            </p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {itens.map((item) => (
+              <ItemPedidoRow
+                key={item.uid}
+                item={item}
+                compacto
+                onQuantidade={atualizarQuantidade}
+                onRemover={removerItem}
+              />
+            ))}
+          </ul>
+        )}
+
+        <Separator className="my-4" />
+
+        {/* Observação */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="obs-balcao" className="text-sm font-medium text-foreground/90">
+            Observações (opcional)
+          </label>
+          <textarea
+            id="obs-balcao"
+            placeholder="Ex.: sem cebola, embalar para viagem..."
+            value={observacao}
+            onChange={(e) => definirObservacao(e.target.value)}
+            className="w-full rounded-xl border border-border p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+            rows={3}
+          />
+        </div>
+
+        {/* Forma de pagamento */}
+        <div className="mt-4 flex flex-col gap-2">
+          <span className="text-sm font-medium text-foreground/90">Forma de pagamento</span>
+          <div className="grid grid-cols-2 gap-2">
+            {FORMAS_PAGAMENTO.map((forma) => (
+              <ToggleButton
+                key={forma.value}
+                pressed={formaPagamento === forma.value}
+                onClick={() => definirFormaPagamento(forma.value as "pix" | "dinheiro" | "credito" | "debito")}
+              >
+                {forma.label}
+              </ToggleButton>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 bg-white px-5 py-4">
+        {/* Total */}
+        <div className="flex items-end justify-between border-b border-dashed border-slate-200 pb-3">
+          <span className="text-sm font-bold text-foreground">
+            {totalItens} {totalItens === 1 ? "item" : "itens"}
+          </span>
+          <span className="text-2xl font-black tracking-tight text-slate-950">
+            {formatBRL(totalPedido)}
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <Button
+            type="button"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              needsClose?.();
+              handleFinalizar();
+            }}
+            disabled={itens.length === 0 || formaPagamento === null}
+          >
+            <Send className="h-5 w-5" />
+            Finalizar pedido
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            className="w-full"
+            onClick={() => {
+              needsClose?.();
+              setConfirmarLimpar(true);
+            }}
+            disabled={itens.length === 0}
+          >
+            <Trash2 className="h-5 w-5" />
+            Limpar pedido
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       <PageHeader
         title="Novo pedido"
-        description="Clique em um produto para montar o pedido. O resumo fica fixo à direita."
+        description="Clique em um produto para montar o pedido. A comanda fica ao lado (barra fixa no celular)."
         actions={
           <Button variant="outline" size="sm" onClick={() => setFilaAberta(true)}>
             <Printer className="h-4 w-4" aria-hidden="true" />
@@ -207,7 +352,7 @@ function ModuloBalcao() {
         </DialogContent>
       </Dialog>
 
-      {/* Grid: catálogo | comanda fixa */}
+      {/* Grid: catálogo | comanda fixa (desktop) */}
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* Catálogo — scrolla sozinho */}
         <div className="min-w-0 flex-1">
@@ -219,142 +364,61 @@ function ModuloBalcao() {
           </Card>
         </div>
 
-        {/* Comanda — fixa à direita, scrolla sozinha */}
-        <div className="w-full shrink-0 lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:w-[23rem] lg:overflow-y-auto">
-          <Card>
-            <div className="flex flex-col gap-5 p-6 sm:p-7">
-              <h2 className="text-xl font-semibold tracking-[-0.01em]">Pedido atual</h2>
-
-            {/* Cliente */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="cliente-nome" className="text-sm font-medium text-foreground/90">
-                Cliente (opcional)
-              </label>
-              <div className="relative">
-                <ShoppingBag
-                  className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <input
-                  id="cliente-nome"
-                  type="text"
-                  placeholder="Nome do cliente"
-                  value={clienteNome}
-                  onChange={(e) => definirClienteNome(e.target.value)}
-                  className="w-full rounded-xl border border-border pl-12 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </div>
-
-            {/* Tipo de pedido */}
-            <div className="flex flex-wrap gap-2">
-              {["balcao", "viagem", "delivery"].map((tipo) => (
-                <Button
-                  key={tipo}
-                  type="button"
-                  size="sm"
-                  variant={tipoPedido === tipo ? "primary" : "outline"}
-                  onClick={() => definirTipoPedido(tipo as typeof tipoPedido)}
-                >
-                  {tipo === "balcao" ? "Balcão" : tipo === "viagem" ? "Viagem" : "Delivery"}
-                </Button>
-              ))}
-            </div>
-
-            <Separator />
-
-            {/* Itens */}
-            {itens.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Nenhum item adicionado ainda.
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {itens.map((item) => (
-                  <ItemPedidoRow
-                    key={item.uid}
-                    item={item}
-                    compacto
-                    onQuantidade={atualizarQuantidade}
-                    onRemover={removerItem}
-                  />
-                ))}
-              </ul>
-            )}
-
-            <Separator />
-
-            {/* Observação */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="obs-balcao" className="text-sm font-medium text-foreground/90">
-                Observações (opcional)
-              </label>
-              <textarea
-                id="obs-balcao"
-                placeholder="Ex.: sem cebola, embalar para viagem..."
-                value={observacao}
-                onChange={(e) => definirObservacao(e.target.value)}
-                className="w-full rounded-xl border border-border p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                rows={3}
-              />
-            </div>
-
-            {/* Forma de pagamento */}
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-foreground/90">Forma de pagamento</span>
-              <div className="grid grid-cols-2 gap-2">
-                {FORMAS_PAGAMENTO.map((forma) => (
-                  <ToggleButton
-                    key={forma.value}
-                    pressed={formaPagamento === forma.value}
-                    onClick={() => definirFormaPagamento(forma.value as "pix" | "dinheiro" | "credito" | "debito")}
-                  >
-                    {forma.label}
-                  </ToggleButton>
-                ))}
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{totalItens} {totalItens === 1 ? "item" : "itens"}</span>
-              </div>
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="tabular">{formatBRL(totalPedido)}</span>
-              </div>
-            </div>
-
-            {/* Ações fixas — sempre visíveis no rodapé da comanda */}
-            <div className="sticky bottom-0 -mx-6 -mb-6 bg-card px-6 pb-6 pt-3 border-t border-border">
-              <div className="flex flex-col gap-3">
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full"
-                  onClick={handleFinalizar}
-                  disabled={itens.length === 0 || formaPagamento === null}
-                >
-                  <Send className="h-5 w-5" />
-                  Finalizar pedido
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  className="w-full"
-                  onClick={() => setConfirmarLimpar(true)}
-                  disabled={itens.length === 0}
-                >
-                  <Trash2 className="h-5 w-5" />
-                  Limpar pedido
-                </Button>
-              </div>
+        {/* Comanda — fixa à direita (desktop) */}
+        <div className="hidden w-full shrink-0 lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-8rem)] lg:w-[23rem] lg:flex-col lg:overflow-hidden lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:shadow-soft">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Comanda do balcão
+              </p>
+              <h2 className="mt-0.5 text-lg font-bold text-foreground">
+                {clienteNome.trim() || "Novo pedido"}
+              </h2>
             </div>
           </div>
-        </Card>
+          {renderComanda()}
+        </div>
       </div>
+
+      {/* Mobile: barra fixa + drawer da comanda em tela cheia */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] lg:hidden">
+        <button
+          onClick={() => setComandaAberta(true)}
+          className="pointer-events-auto mx-auto mb-3 flex w-[calc(100%-24px)] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-900 px-5 py-4 text-white shadow-2xl"
+        >
+          <span className="text-sm font-bold">
+            {itens.length === 0
+              ? "Comanda vazia"
+              : `Comanda · ${totalItens} item${totalItens > 1 ? "ns" : ""}`}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-lg font-black">{formatBRL(totalPedido)}</span>
+            <span className="rounded-lg bg-white/20 px-2.5 py-1 text-xs font-bold">Ver comanda</span>
+          </span>
+        </button>
+
+        {comandaAberta && (
+          <div className="pointer-events-auto fixed inset-0 z-[120] flex flex-col bg-white">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-sm font-black text-white">
+                  <ShoppingBag size={18} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Balcão</p>
+                  <h2 className="text-base font-bold text-slate-900">{clienteNome.trim() || "Novo pedido"}</h2>
+                </div>
+              </div>
+              <button
+                onClick={() => setComandaAberta(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            {renderComanda(() => setComandaAberta(false))}
+          </div>
+        )}
       </div>
 
       {/* Fluxo comum de cobrança */}

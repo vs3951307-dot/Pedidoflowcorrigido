@@ -6,30 +6,18 @@ import { CheckCircle2, Package, Plus, Phone, Trash2, UtensilsCrossed } from "luc
 
 import { PageHeader } from "@/components/patterns/page-header";
 import { EmptyState } from "@/components/patterns/empty-state";
-import { ItemPedidoRow } from "@/components/patterns/item-pedido-row";
 import { ConfirmarAcao } from "@/components/patterns/confirmar-acao";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
+import { RetiradaNovoPedidoOverlay } from "@/app/pdv/_components/retirada-novo-pedido-overlay";
 import { cn, formatBRL, formatHora } from "@/lib/utils";
 import { calcularTotais, type ItemPedido, type Produto, type SelecaoPizza } from "@/lib/catalogo";
-import { CatalogoProdutos } from "@/app/pdv/_components/catalogo-produtos";
 import {
   useRetirada,
   type PedidoRetirada,
@@ -341,80 +329,21 @@ export function RetiradaView() {
         </TabsContent>
       </Tabs>
 
-      {/* Novo pedido de retirada */}
-      <Dialog open={novoAberto} onOpenChange={(open) => !open && fecharNovo()}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto scrollbar-thin sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Novo pedido de retirada</DialogTitle>
-            <DialogDescription>
-              Monte o pedido e informe o nome do cliente para chamar na
-              entrega. O pagamento é feito agora, no balcão.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="cliente-retirada">Nome do cliente</Label>
-            <Input
-              id="cliente-retirada"
-              placeholder="Ex.: João da Silva"
-              value={nomeCliente}
-              onChange={(e) => setNomeCliente(e.target.value)}
-            />
-          </div>
-
-          <Separator />
-
-          <CatalogoProdutos onAdicionar={handleAdicionarProduto} />
-
-          <Separator />
-
-          {itensRascunho.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum item adicionado ainda.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {itensRascunho.map((item) => (
-                <ItemPedidoRow
-                  key={item.uid}
-                  item={item}
-                  compacto
-                  onQuantidade={handleQuantidade}
-                  onRemover={handleRemover}
-                />
-              ))}
-            </ul>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="obs-retirada">Observações (opcional)</Label>
-            <Textarea
-              id="obs-retirada"
-              placeholder="Ex.: cortar em 8 fatias, embalar para viagem..."
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-              className="min-h-[4.5rem]"
-            />
-          </div>
-
-          <div className="flex items-center justify-between text-lg font-bold">
-            <span>Total</span>
-            <span className="tabular">{formatBRL(totalRascunho)}</span>
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={fecharNovo}>
-              Cancelar
-            </Button>
-            <Button
-              disabled={!nomeCliente.trim() || itensRascunho.length === 0}
-              onClick={irParaPagamento}
-            >
-              Continuar para pagamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Novo pedido de retirada (tela cheia, estilo Mesas) */}
+      <RetiradaNovoPedidoOverlay
+        aberto={novoAberto}
+        nomeCliente={nomeCliente}
+        onNomeClienteChange={setNomeCliente}
+        itens={itensRascunho}
+        observacao={observacao}
+        onObservacaoChange={setObservacao}
+        onAdicionarProduto={handleAdicionarProduto}
+        onQuantidade={handleQuantidade}
+        onRemover={handleRemover}
+        onFechar={fecharNovo}
+        onContinuar={irParaPagamento}
+        total={totalRascunho}
+      />
 
       {/* Fluxo comum de cobrança */}
       <PagamentoDialog

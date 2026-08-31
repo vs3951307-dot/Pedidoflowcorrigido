@@ -12,8 +12,13 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Send,
+  ShoppingBag,
   Trash2,
+  Truck,
+  User,
   UserRound,
+  X,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/patterns/page-header";
@@ -808,195 +813,382 @@ function NovoPedidoDelivery({
     }
   }
 
-  return (
-    <Dialog open={aberto} onOpenChange={(open) => !open && fechar()}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto scrollbar-thin sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Novo pedido de delivery</DialogTitle>
-          <DialogDescription>
-            Cliente, endereço completo e pagamento — a taxa de entrega é
-            calculada pelo bairro configurado.
-          </DialogDescription>
-        </DialogHeader>
+  const [drawerAberto, setDrawerAberto] = React.useState(false);
 
-        <div className="flex flex-col gap-4">
-          {/* Busca de cliente */}
-          <div className="relative flex flex-col gap-2">
-            <Label>Buscar cliente (telefone ou nome)</Label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Ex.: 11988112233 ou Maria"
-                onChange={(e) => handleBuscar(e.target.value)}
+  React.useEffect(() => {
+    if (aberto) setDrawerAberto(false);
+  }, [aberto]);
+
+  if (!aberto) return null;
+
+  const itensVazio = itensRascunho.length === 0;
+
+  const renderComanda = (needsClose?: () => void) => (
+    <>
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {itensVazio ? (
+          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <ShoppingBag size={30} className="text-slate-400" />
+            </div>
+            <p className="font-bold text-slate-700">Comanda vazia</p>
+            <p className="mt-1 max-w-[240px] text-sm leading-5 text-slate-400">
+              Selecione um produto para montar a entrega.
+            </p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {itensRascunho.map((item) => (
+              <ItemPedidoRow
+                key={item.uid}
+                item={item}
+                compacto
+                onQuantidade={handleQuantidade}
+                onRemover={(uid) => handleQuantidade(uid, 0)}
               />
-              {buscando && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">buscando…</span>}
-            </div>
-            {resultados.length > 0 && (
-              <ul className="absolute top-full z-10 mt-1 flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                {resultados.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      className="flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm hover:bg-secondary"
-                      onClick={() => usarCliente(c)}
-                    >
-                      <span className="font-semibold">{c.nome}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {c.telefone ?? "sem telefone"} · {c.enderecos[0]?.rua ?? "sem endereço"}
-                      </span>
-                    </button>
-                  </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="border-t border-slate-200 px-5 py-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <Label>Forma de pagamento</Label>
+            <Select value={forma} onValueChange={setForma}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMAS_ENTREGA.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
                 ))}
-              </ul>
-            )}
-            {clienteSelecionado && (
-              <Button variant="ghost" size="sm" className="self-start text-muted-foreground" onClick={limparSelecao}>
-                <RotateCcw className="h-4 w-4" />
-                Novo cliente (limpar seleção)
-              </Button>
-            )}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-nome">Nome do cliente *</Label>
-              <Input id="del-nome" placeholder="Ex.: Maria Souza" value={nomeCliente} onChange={(e) => setNomeCliente(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-fone">Telefone *</Label>
-              <Input id="del-fone" placeholder="Ex.: (11) 98811-2233" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="del-rua">Endereço *</Label>
-            <Input id="del-rua" placeholder="Ex.: Rua das Flores, 217" value={rua} onChange={(e) => setRua(e.target.value)} />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-bairro">Bairro *</Label>
-              <Input id="del-bairro" placeholder="Ex.: Jd. das Flores" value={bairro} onChange={(e) => setBairro(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-compl">Complemento</Label>
-              <Input id="del-compl" placeholder="Ex.: apto 32" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-ref">Referência</Label>
-              <Input id="del-ref" placeholder="Ex.: perto da padaria" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-prev">Previsão</Label>
-              <Input id="del-prev" placeholder="Ex.: 35–45 min" value={previsao} onChange={(e) => setPrevisao(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="del-obs">Observações</Label>
-              <Input id="del-obs" placeholder="Ex.: sem cebola" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-            </div>
-          </div>
-
-          <Separator />
-
-          <CatalogoProdutos onAdicionar={handleAdicionarProduto} />
-
-          {itensRascunho.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum item adicionado ainda.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {itensRascunho.map((item) => (
-                <ItemPedidoRow key={item.uid} item={item} compacto onQuantidade={handleQuantidade} onRemover={(uid) => handleQuantidade(uid, 0)} />
-              ))}
-            </ul>
-          )}
-
-          <Separator />
-
-          {/* Pagamento */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <Label>Forma de pagamento</Label>
-                <p className="text-xs text-muted-foreground">Escolhida para a entrega deste pedido.</p>
-              </div>
-              <Select value={forma} onValueChange={setForma}>
-                <SelectTrigger className="w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FORMAS_ENTREGA.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>
-                      {f.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
-              <div className="flex flex-col gap-1">
-                <p className="font-semibold">Pagar na entrega</p>
-                <p className="text-sm text-muted-foreground">
-                  O pagamento fica pendente e é confirmado quando a entrega é concluída.
-                </p>
-              </div>
-              <Switch checked={pagarNaEntrega} onCheckedChange={setPagarNaEntrega} aria-label="Pagar na entrega" />
-            </div>
-
-            {pagarNaEntrega && forma === "dinheiro" && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="del-troco">Troco para</Label>
-                <Input
-                  id="del-troco"
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex.: 100,00"
-                  value={trocoPara}
-                  onChange={(e) => setTrocoPara(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1.5 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Itens</span>
-              <span className="tabular">{formatBRL(totalItens)}</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Taxa de entrega ({bairro.trim() || "bairro"})</span>
-              <span className="tabular">
-                {taxa.gratuito ? "Grátis" : taxa.regra ? formatBRL(taxa.taxa) : "—"}
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-slate-700">Pagar na entrega</span>
+              <span className="max-w-[220px] text-xs leading-4 text-slate-400">
+                O pagamento fica pendente e é confirmado ao concluir a entrega.
               </span>
             </div>
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total</span>
-              <span className="tabular">{formatBRL(total)}</span>
-            </div>
+            <Switch checked={pagarNaEntrega} onCheckedChange={setPagarNaEntrega} aria-label="Pagar na entrega" />
           </div>
 
-          <DialogFooter className="flex-wrap gap-2">
-            <Button variant="ghost" onClick={fechar}>
-              Cancelar
-            </Button>
-            {pagarNaEntrega ? (
-              <Button disabled={!valido} onClick={confirmarNaEntrega}>
-                <Package className="h-4 w-4" />
-                Confirmar — pagar na entrega
-              </Button>
-            ) : (
-              <Button disabled={!valido} onClick={pagarAgora}>
-                <CheckCircle2 className="h-4 w-4" />
-                Continuar para pagamento
-              </Button>
-            )}
-          </DialogFooter>
+          {pagarNaEntrega && forma === "dinheiro" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="del-troco-ov">Troco para</Label>
+              <Input
+                id="del-troco-ov"
+                type="number"
+                step="0.01"
+                placeholder="Ex.: 100,00"
+                value={trocoPara}
+                onChange={(e) => setTrocoPara(e.target.value)}
+              />
+            </div>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="mt-4 flex flex-col gap-1.5 border-t border-dashed border-slate-200 pt-4 text-sm">
+          <div className="flex justify-between text-slate-500">
+            <span>Itens</span>
+            <span className="tabular">{formatBRL(totalItens)}</span>
+          </div>
+          <div className="flex justify-between text-slate-500">
+            <span>Taxa de entrega ({bairro.trim() || "bairro"})</span>
+            <span className="tabular">
+              {taxa.gratuito ? "Grátis" : taxa.regra ? formatBRL(taxa.taxa) : "—"}
+            </span>
+          </div>
+          <div className="mt-1 flex items-end justify-between">
+            <span className="text-sm font-bold text-slate-700">
+              Total · {itensRascunho.length} {itensRascunho.length === 1 ? "item" : "itens"}
+            </span>
+            <span className="text-2xl font-black tracking-tight text-slate-950">
+              {formatBRL(total)}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          {pagarNaEntrega ? (
+            <Button
+              type="button"
+              size="lg"
+              className="w-full"
+              disabled={!valido}
+              onClick={() => {
+                needsClose?.();
+                confirmarNaEntrega();
+              }}
+            >
+              <Package className="h-5 w-5" />
+              Confirmar — pagar na entrega
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="lg"
+              className="w-full"
+              disabled={!valido}
+              onClick={() => {
+                needsClose?.();
+                pagarAgora();
+              }}
+            >
+              <Send className="h-5 w-5" />
+              Continuar para pagamento
+            </Button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* ============================================= */}
+      {/* OVERLAY (DESKTOP): formulário | comanda       */}
+      {/* ============================================= */}
+      <div className="fixed inset-0 z-40 bg-slate-950/55 p-2 backdrop-blur-[3px] md:p-5">
+        <div className="mx-auto flex h-full max-w-[1750px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-[#f7f8fa] shadow-2xl lg:flex-row">
+          {/* FORMULÁRIO + CATÁLOGO - LADO ESQUERDO */}
+          <section className="flex min-w-0 flex-1 flex-col">
+            <header className="flex min-h-[82px] items-center justify-between border-b border-slate-200 bg-white px-5 md:px-7 lg:hidden">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                  Novo pedido
+                </p>
+                <h1 className="text-xl font-bold text-slate-900">Delivery</h1>
+              </div>
+              <button
+                onClick={fechar}
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                <X size={21} />
+              </button>
+            </header>
+
+            {/* Cliente + endereço + fechar (desktop) */}
+            <div className="max-h-[52vh] overflow-y-auto border-b border-slate-200 bg-white px-5 pb-5 pt-5 md:px-7 lg:max-h-none lg:flex-none">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Cliente e endereço de entrega
+                </p>
+                <Button variant="outline" onClick={fechar} className="hidden lg:inline-flex">
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+              </div>
+
+              {/* Busca de cliente */}
+              <div className="relative mt-3 flex flex-col gap-2">
+                <Label>Buscar cliente (telefone ou nome)</Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Ex.: 11988112233 ou Maria"
+                    onChange={(e) => handleBuscar(e.target.value)}
+                  />
+                  {buscando && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      buscando…
+                    </span>
+                  )}
+                </div>
+                {resultados.length > 0 && (
+                  <ul className="absolute top-full z-10 mt-1 flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+                    {resultados.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          className="flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm hover:bg-secondary"
+                          onClick={() => usarCliente(c)}
+                        >
+                          <span className="font-semibold">{c.nome}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {c.telefone ?? "sem telefone"} · {c.enderecos[0]?.rua ?? "sem endereço"}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {clienteSelecionado && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-start text-muted-foreground"
+                    onClick={limparSelecao}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Novo cliente (limpar seleção)
+                  </Button>
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-nome">Nome do cliente *</Label>
+                  <Input
+                    id="del-nome"
+                    placeholder="Ex.: Maria Souza"
+                    value={nomeCliente}
+                    onChange={(e) => setNomeCliente(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-fone">Telefone *</Label>
+                  <Input
+                    id="del-fone"
+                    placeholder="Ex.: (11) 98811-2233"
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2">
+                <Label htmlFor="del-rua">Endereço *</Label>
+                <Input
+                  id="del-rua"
+                  placeholder="Ex.: Rua das Flores, 217"
+                  value={rua}
+                  onChange={(e) => setRua(e.target.value)}
+                />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-bairro">Bairro *</Label>
+                  <Input
+                    id="del-bairro"
+                    placeholder="Ex.: Jd. das Flores"
+                    value={bairro}
+                    onChange={(e) => setBairro(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-compl">Complemento</Label>
+                  <Input
+                    id="del-compl"
+                    placeholder="Ex.: apto 32"
+                    value={complemento}
+                    onChange={(e) => setComplemento(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-ref">Referência</Label>
+                  <Input
+                    id="del-ref"
+                    placeholder="Ex.: perto da padaria"
+                    value={referencia}
+                    onChange={(e) => setReferencia(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-prev">Previsão</Label>
+                  <Input
+                    id="del-prev"
+                    placeholder="Ex.: 35–45 min"
+                    value={previsao}
+                    onChange={(e) => setPrevisao(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="del-obs">Observações</Label>
+                  <Input
+                    id="del-obs"
+                    placeholder="Ex.: sem cebola"
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto bg-white p-5 md:p-7">
+              <p className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                <Truck className="h-4 w-4" />
+                Clique em um produto para montar a entrega. A comanda fica à direita.
+              </p>
+              <CatalogoProdutos onAdicionar={handleAdicionarProduto} />
+            </div>
+          </section>
+
+          {/* COMANDA - LADO DIREITO */}
+          <aside className="hidden w-[390px] shrink-0 flex-col border-l border-slate-200 bg-white lg:flex xl:w-[430px]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Comanda do delivery
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {nomeCliente.trim() || "Cliente"}
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {rua.trim() ? `${rua} · ${bairro.trim() || "—"}` : "Endereço não informado"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-orange-50 px-3 py-2 text-orange-700">
+                <Truck size={16} />
+                <span className="text-sm font-bold">Entrega</span>
+              </div>
+            </div>
+            {renderComanda()}
+          </aside>
+        </div>
+      </div>
+
+      {/* ============================================= */}
+      {/* MOBILE: barra inferior + comanda (drawer)     */}
+      {/* ============================================= */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] lg:hidden">
+        <button
+          onClick={() => setDrawerAberto(true)}
+          className="pointer-events-auto mx-auto mb-3 flex w-[calc(100%-24px)] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-900 px-5 py-4 text-white shadow-2xl"
+        >
+          <span className="text-sm font-bold">
+            {itensVazio ? "Comanda vazia" : `Comanda · ${itensRascunho.length} item${itensRascunho.length > 1 ? "ns" : ""}`}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-lg font-black">{formatBRL(total)}</span>
+            <span className="rounded-lg bg-white/20 px-2.5 py-1 text-xs font-bold">Ver comanda</span>
+          </span>
+        </button>
+
+        {drawerAberto && (
+          <div className="pointer-events-auto fixed inset-0 z-[120] flex flex-col bg-white">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-sm font-black text-white">
+                  <Truck size={18} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Delivery</p>
+                  <h2 className="text-base font-bold text-slate-900">{nomeCliente.trim() || "Cliente"}</h2>
+                </div>
+              </div>
+              <button
+                onClick={() => setDrawerAberto(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            {renderComanda(() => setDrawerAberto(false))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
