@@ -58,9 +58,18 @@ export function AppShell({
   const { showSplash, hide, minimumShowMs } = useSplashOnce(empresaId ?? null);
 
   const agora = useRelogio();
-  const time = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const date = agora.toLocaleDateString("pt-BR");
-  const weekday = DIAS_SEMANA[agora.getDay()];
+  // O relógio do Header só é renderizado DEPOIS do mount no cliente. Sem isso,
+  // servidor (fuso UTC) e cliente (fuso local) formatariam instantes
+  // diferentes → React falhava a hidratação (erros #425/#418/#423) e a tela
+  // ficava sem resposta aos cliques. O placeholder "--:--" é idêntico nos
+  // dois lados, em qualquer fuso horário.
+  const [montou, setMontou] = React.useState(false);
+  React.useEffect(() => setMontou(true), []);
+  const time = montou
+    ? agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : "--:--";
+  const date = montou ? agora.toLocaleDateString("pt-BR") : "—";
+  const weekday = montou ? DIAS_SEMANA[agora.getDay()] : "";
 
   // Fecha a gaveta mobile quando a navegação muda de rota.
   React.useEffect(() => {
