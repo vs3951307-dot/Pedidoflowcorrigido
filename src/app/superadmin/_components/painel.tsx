@@ -384,9 +384,19 @@ export function PainelSuperAdmin({ nomeSuperAdmin }: { nomeSuperAdmin: string })
   );
 }
 
+function slugificar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 function FormularioNovaEmpresa({ aoCriar }: { aoCriar: () => void }) {
   const [nome, setNome] = React.useState("");
   const [slug, setSlug] = React.useState("");
+  const [slugManual, setSlugManual] = React.useState(false);
   const [plano, setPlano] = React.useState<"basico" | "profissional" | "completo">("basico");
   const [adminNome, setAdminNome] = React.useState("");
   const [adminEmail, setAdminEmail] = React.useState("");
@@ -394,6 +404,21 @@ function FormularioNovaEmpresa({ aoCriar }: { aoCriar: () => void }) {
   const [trialDias, setTrialDias] = React.useState("14");
   const [modulos, setModulos] = React.useState<Modulo[]>(["pdv", "estoque", "relatorios", "impressao"]);
   const [enviando, setEnviando] = React.useState(false);
+
+  // A partir do nome, geramos o identificador automaticamente — o super
+  // admin não precisa "inventar" o slug (que só aceita minúsculas, números
+  // e hífens). Se ele editar o slug à mão, paramos de sobrescrever.
+  function handleNome(v: string) {
+    setNome(v);
+    if (!slugManual) setSlug(slugificar(v));
+  }
+
+  // Sanitiza a digitação manual do slug em tempo real, removendo qualquer
+  // caractere que a validação (minúsculas/números/hífens) rejeitaria.
+  function handleSlugManual(v: string) {
+    setSlugManual(true);
+    setSlug(slugificar(v) || v.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+  }
 
   function alternarModulo(m: Modulo) {
     setModulos((atual) => (atual.includes(m) ? atual.filter((x) => x !== m) : [...atual, m]));
@@ -407,7 +432,7 @@ function FormularioNovaEmpresa({ aoCriar }: { aoCriar: () => void }) {
         method: "POST",
         body: JSON.stringify({
           nome,
-          slug,
+          slug: slugificar(slug) || slugificar(nome),
           plano,
           modulos,
           trialDias: Number(trialDias) || 0,
@@ -434,11 +459,14 @@ function FormularioNovaEmpresa({ aoCriar }: { aoCriar: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>Nome da empresa</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Pastelaria do João" required />
+            <Input value={nome} onChange={(e) => handleNome(e.target.value)} placeholder="Pastelaria do João" required />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Identificador (slug)</Label>
-            <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="pastelaria-do-joao" required />
+            <Input value={slug} onChange={(e) => handleSlugManual(e.target.value)} placeholder="pastelaria-do-joao" required />
+            <p className="text-xs text-muted-foreground">
+              Gerado automaticamente do nome — só minúsculas, números e hífens. Edite se quiser.
+            </p>
           </div>
         </div>
 
