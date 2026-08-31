@@ -60,6 +60,7 @@ const DELEGATES_PLATAFORMA = new Set([
   "tokenRecuperacao",
   "permissaoUsuario",
   "auditoria",
+  "assinaturaPagamento",
 ]);
 
 const globalForPrisma = globalThis as unknown as { plataformaPrisma?: PrismaClient };

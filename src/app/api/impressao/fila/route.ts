@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, plataformaPrisma } from "@/lib/prisma";
 import { encontrarEmpresaPorTokenAgente } from "@/lib/impressao";
 import { ativarTenant } from "@/lib/tenant-db";
+import { situacaoAssinatura } from "@/lib/assinatura";
 import { verificarLimite, ipDaRequisicao } from "@/lib/rate-limit";
 
 const DESTINOS = [
@@ -51,10 +52,19 @@ export async function GET(req: NextRequest) {
   // Ativa o tenant desta empresa ANTES de acessar modelos de tenant
   const empresa = await plataformaPrisma.empresa.findUnique({
     where: { id: empresaId },
-    select: { id: true, schemaBanco: true, databaseUrlSecreta: true, slug: true },
+    select: { id: true, schemaBanco: true, databaseUrlSecreta: true, slug: true, status: true, vencimentoEm: true, carenciaAte: true },
   });
   if (!empresa) {
     return NextResponse.json({ erro: "Empresa não encontrada." }, { status: 404 });
+  }
+  // SEGURANÇA (GAP corrigido): uma empresa BLOQUEADA/SUSPENSA/vencida
+  // não pode continuar operando o agente de impressão (criar/pegar
+  // trabalhos novos). Antes este endpoint não checava status/vencimento.
+  // Como a fila pode ter trabalhos já impressos, devolve a fila VAZIA
+  // (o agente continua respondendo/renovando heartbeat sem quebra), mas
+  // nenhum trabalho novo é servido.
+  if (!["ativa", "teste"].includes(empresa.status) || situacaoAssinatura(empresa).estado === "vencida") {
+    return NextResponse.json({ ok: true, itens: [], pendentes: 0, bloqueado: true });
   }
   ativarTenant(empresa);
 

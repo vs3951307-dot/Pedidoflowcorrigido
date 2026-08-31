@@ -93,22 +93,44 @@ export async function salvarPersonaAtendente(
   });
 }
 
-/** Abertura padrão que ajuda o cliente a saber o que pode fazer. */
+/**
+ * Abertura padrão que ajuda o cliente a saber o que pode fazer.
+ *
+ * NÃO é mais concatenada à saudação (isso duplicava frases e misturava
+ * mensagens antigas com novas). Fica apenas como exposição auxiliar — as
+ * respostas usam a saudação única `montarSaudacao` / `saudacaoInicial`.
+ */
 export const SUGESTAO_INICIAL = `(pode dizer *"pedir"*, *"cardápio"*, *"promoções"* ou *"horário"*)`;
 
-/** Saudação conforme nome da atendente e tom configurados. */
-export function montarSaudacao(persona: PersonaAtendente, nomeCliente: string | null): string {
+/**
+ * FONTE ÚNICA da saudação inicial da atendente.
+ *
+ * O texto é fixo e amigável: `Olá! 😊 Eu sou a {nome}, atendente da {loja}!
+ * 🍕💜 Como posso ajudar você hoje?` — sem concatenar sugestões nem repetir
+ * cumprimentos. Sem nome de atendente configurado, cai numa saudação neutra.
+ *
+ * `loja` é o `nomeFantasia` da empresa (leitura em `catalogo.ts`), nunca
+ * inventado. Quando não informado, mantém um rótulo genérico.
+ */
+export function montarSaudacao(
+  persona: PersonaAtendente,
+  nomeCliente: string | null,
+  loja?: string | null
+): string {
   const nome = persona.nome.trim();
-  const cliente = nomeCliente ? `Olá, ${nomeCliente}!` : "Olá!";
-  const apresentacao = nome ? `Aqui é a ${nome}.` : null;
-  switch (persona.tom) {
-    case "formal":
-      return `${cliente} ${apresentacao ?? "Bem-vindo(a) à nossa pizzaria."} Em que posso ajudar?`;
-    case "profissional":
-      return `${cliente} ${apresentacao ?? "Somos a nossa pizzaria."} Como posso ajudar?`;
-    case "descontraido":
-      return `${cliente} 👋 ${apresentacao ?? "Bora pedir algo?"}`;
-    default:
-      return `${cliente} 😊 ${apresentacao ?? "O que você deseja?"}`;
+  const cliente = nomeCliente ? `Olá, ${nomeCliente}! 😊` : "Olá! 😊";
+  if (!nome) {
+    return `${cliente} O que você deseja hoje?`;
   }
+  const lojaFinal = loja?.trim() || "nossa loja";
+  return `${cliente} Eu sou a ${nome}, atendente da ${lojaFinal}! 🍕💜 Como posso ajudar você hoje?`;
+}
+
+/** Saudação única usada quando uma conversa realmente começa. */
+export function saudacaoInicial(
+  persona: PersonaAtendente,
+  nomeCliente: string | null,
+  loja?: string | null
+): string {
+  return montarSaudacao(persona, nomeCliente, loja);
 }

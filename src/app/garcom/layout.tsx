@@ -1,4 +1,5 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
+import { AvisoCarencia } from "@/components/assinatura/aviso-carencia";
 import { GarcomProvider } from "@/app/garcom/_lib/garcom-context";
 import { exigirRota } from "@/lib/acesso";
 import { temPermissao } from "@/lib/permissao";
@@ -13,7 +14,9 @@ export default async function GarcomLayout({ children }: { children: React.React
   const usuario = await exigirRota("salao");
 
   return (
-    <GarcomProvider>
+    <>
+      <AvisoCarencia ativo={usuario.assinaturaWarning} diasRestantes={usuario.diasRestantesCarencia} />
+      <GarcomProvider>
       <AppShell
         greetingName={usuario.nome}
         empresaNome={usuario.empresaNome}
@@ -28,5 +31,6 @@ export default async function GarcomLayout({ children }: { children: React.React
         {children}
       </AppShell>
     </GarcomProvider>
+    </>
   );
 }

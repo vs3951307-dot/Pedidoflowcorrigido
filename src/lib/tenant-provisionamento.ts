@@ -82,6 +82,7 @@ const MODELS_PLATAFORMA = new Set([
   "TokenRecuperacao",
   "PermissaoUsuario",
   "Auditoria",
+  "AssinaturaPagamento",
 ]);
 
 interface Campo {

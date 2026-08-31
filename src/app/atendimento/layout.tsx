@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { AvisoCarencia } from "@/components/assinatura/aviso-carencia";
 import { exigirRota } from "@/lib/acesso";
 import { temPermissao } from "@/lib/permissao";
 
@@ -14,7 +15,9 @@ export default async function AtendimentoLayout({ children }: { children: React.
   const usuario = await exigirRota("atendimento");
 
   return (
-    <AppShell
+    <>
+      <AvisoCarencia ativo={usuario.assinaturaWarning} diasRestantes={usuario.diasRestantesCarencia} />
+      <AppShell
       greetingName={usuario.nome}
       empresaNome={usuario.empresaNome}
       empresaId={usuario.empresaId}
@@ -27,5 +30,6 @@ export default async function AtendimentoLayout({ children }: { children: React.
     >
       {children}
     </AppShell>
+    </>
   );
 }

@@ -38,12 +38,12 @@ import {
   listarAdicionais,
   listarFormasPagamento,
   listarProdutosDisponiveis,
+  nomeFantasia,
   normalizarTelefone,
 } from "@/lib/atendente/catalogo";
 import { iaDisponivel, interpretarMensagem, embelezarResposta } from "@/lib/atendente/ia";
 import {
   PERSONA_PADRAO,
-  SUGESTAO_INICIAL,
   carregarPersonaAtendente,
   montarSaudacao,
   type PersonaAtendente,
@@ -117,6 +117,18 @@ export interface RespostaAtendente {
   status: string;
 }
 
+/* ----------------------------- Constantes de sessão ------------------------ */
+
+/**
+ * Tempo máximo de inatividade de uma conversa antes de o estado ser
+ * descartado. Sem isto, um cliente que abandonou o pedido no meio poderia
+ * voltar horas/dias depois mandando "sim" e CONFIRMAR um carrinho velho
+ * (itens, endereço e forma de pagamento de uma conversa antiga) como se
+ * fosse um pedido novo. Passado o limite, o estado (carrinho/endereço/
+ * pagamento) é zerado e a conversa recomeça limpa.
+ */
+export const TEMPO_MAXIMO_INATIVIDADE_MS = 45 * 60 * 1000; // 45 minutos
+
 /* -------------------------------- Helpers --------------------------------- */
 
 const brl = (v: number) =>
@@ -154,11 +166,11 @@ function querCancelar(texto: string): boolean {
 }
 
 function querPedir(texto: string): boolean {
-  return /(quero pedir|gostaria de pedir|vou pedir|fazer pedido|montar um pedido|vou querer|pedido|pedir|quero comprar|queria|gostaria de|quero um|quero uma)/i.test(texto);
+  return /(quero pedir|gostaria de pedir|vou pedir|fazer pedido|montar um pedido|vou querer|pedido|pedir|quero comprar|queria|gostaria de|quero um|quero uma|quero|me v[êe]|manda|pode ser|vou pedir|fa[çc]o um pedido|eu quero|quero fazer)/i.test(texto);
 }
 
 function querCardapio(texto: string): boolean {
-  return /(card[aá]pio|cardapio|menu|o que tem|o que voc[eê]|quais produtos|cat[aá]logo)/i.test(texto);
+  return /(card[aá]pio|cardapio|menu|o que tem|o que voc[eê]|quais produtos|cat[aá]logo|quais sabores|quais op[cç][õo]es|me passa o|passa o|qual o pre[cç]o|qual pre[cç]o|quanto custa|quanto [eé]|pre[cç]o das?|tabela de pre[cç]os|listagem)/i.test(texto);
 }
 
 function querHorario(texto: string): boolean {
@@ -173,7 +185,7 @@ function querPromocao(texto: string): boolean {
 function querSaudacao(texto: string): boolean {
   if (!/^(oi+|ol[aá]|oii+|bom dia|boa tarde|boa noite|b[o]a\b|e a[ií]|tudo bem|tudo bom|opa|eae|e a[eí])/i.test(texto.trim())) return false;
   // Não é saudação pura se o cliente já está pedindo/querendo algo junto.
-  return !querPedir(texto) && !querCardapio(texto) && !querPromocao(texto) && !querHorario(texto) && !querRegras(texto);
+  return !querPedir(texto) && !querCardapio(texto) && !querPromocao(texto) && !querHorario(texto) && !querRegras(texto) && !querEntrega(texto);
 }
 
 /** Pergunta sobre regras/políticas do negócio (pedido mínimo, taxas etc.). */
@@ -183,9 +195,28 @@ function querRegras(texto: string): boolean {
   );
 }
 
-/** Texto de saudação com a persona da atendente (nome/tom). */
-function saudacaoComPersona(persona: PersonaAtendente, nomeCliente: string | null): string {
-  return `${montarSaudacao(persona, nomeCliente)} ${SUGESTAO_INICIAL}`;
+/** Pergunta sobre entrega/cobertura de bairro ou taxa de entrega. */
+function querEntrega(texto: string): boolean {
+  return /(entregam|voc[eê]s entregam|entrega em|entregam em|chega a[ií]|d[aá] pra entregar|d[aá] para entregar|faz entrega|fazem entrega|taxa de entrega|taxa da entrega|quanto [eé] a entrega|quanto custa a entrega|bairro|taxa)/i.test(
+    texto
+  );
+}
+
+/** Extrai um nome de bairro de uma pergunta de entrega, quando presente. */
+function bairroDaEntrega(texto: string): string | null {
+  const m =
+    texto.match(/(?:em|a[ií]|p[aá]ra|no|na|pro|pra|at[eé])\s+([a-zA-ZÀ-ÿ]+(?:\s+[a-zA-ZÀ-ÿ]+){0,2})/i) ??
+    texto.match(/entregam?\s+em\s+([a-zA-ZÀ-ÿ]+(?:\s+[a-zA-ZÀ-ÿ]+){0,2})/i);
+  if (!m) return null;
+  const candidato = m[1].trim();
+  if (/delivery|entrega|taxa|cart|pix|dinheiro|pagamento/i.test(candidato)) return null;
+  return candidato.length >= 3 ? candidato : null;
+}
+
+/** Texto de saudação única, com persona da atendente e nome da loja (banco). */
+async function saudacaoComPersona(persona: PersonaAtendente, nomeCliente: string | null, empresaId: string): Promise<string> {
+  const loja = await nomeFantasia(empresaId);
+  return montarSaudacao(persona, nomeCliente, loja);
 }
 
 /* ------------------------- Consultas reais (banco) ------------------------- */
@@ -210,6 +241,33 @@ async function promocoesReais(empresaId: string): Promise<string> {
     "Promoções em destaque hoje:\n" +
     destaques.map((p) => `${p.emoji} ${p.nome} — ${brl(p.precoBase)}`).join("\n")
   );
+}
+
+/**
+ * Responde sobre entrega usando as regras REAIS de taxa (`lerConfigTaxaEntrega`).
+ * Se o cliente citou um bairro, informa se entregamos lá e a taxa; senão,
+ * resume a política de entrega sem inventar valores.
+ */
+async function responderSobreEntrega(empresaId: string, texto: string): Promise<PassoResultado> {
+  const config = await lerConfigTaxaEntrega(empresaId);
+  const bairro = bairroDaEntrega(texto);
+  if (bairro) {
+    const { taxa, gratuito } = calcularTaxaEntrega(config, bairro, 0);
+    if (gratuito || taxa === 0) {
+      return {
+        etapa: "intencao",
+        texto: `Sim, entregamos em *${bairro}*! 🛵 E a taxa é *grátis* para este bairro. 🎉`,
+      };
+    }
+    return {
+      etapa: "intencao",
+      texto: `Sim, entregamos em *${bairro}*! 🛵 A taxa de entrega é de *${brl(taxa)}*.`,
+    };
+  }
+  return {
+    etapa: "intencao",
+    texto: "Sim, fazemos entrega! 🛵 A taxa é calculada pelo bairro. Pode me dizer o *bairro* da entrega? (assim confirmo se atendemos e a taxa)",
+  };
 }
 
 /* ------------------------------ Fluxo (FSM) ------------------------------- */
@@ -238,7 +296,7 @@ async function passoAtendimento(
         estado.cliente = { nome: conhecido.nome, telefone: estado.cliente?.telefone ?? "" };
         return {
           etapa: "intencao",
-          texto: saudacaoComPersona(persona, conhecido.nome),
+          texto: await saudacaoComPersona(persona, conhecido.nome, estado.empresaId),
         };
       }
       // Intenção clara já na primeira mensagem: pula a pergunta do nome e
@@ -248,14 +306,23 @@ async function passoAtendimento(
         querCardapio(texto) ||
         querPromocao(texto) ||
         querHorario(texto) ||
+        querEntrega(texto) ||
+        querRegras(texto) ||
         /^(oi|ola|bom dia|boa tarde|boa noite|e ai|eai|hey|hello)\b/i.test(texto)
       ) {
-        if (querPedir(texto) || querCardapio(texto) || querPromocao(texto) || querHorario(texto)) {
+        if (
+          querPedir(texto) ||
+          querCardapio(texto) ||
+          querPromocao(texto) ||
+          querHorario(texto) ||
+          querEntrega(texto) ||
+          querRegras(texto)
+        ) {
           return passoAtendimento("intencao", texto, estado, persona);
         }
         return {
           etapa: "intencao",
-          texto: saudacaoComPersona(persona, null),
+          texto: await saudacaoComPersona(persona, null, estado.empresaId),
         };
       }
       // Sem intenção: a resposta é tratada como nome (identificação).
@@ -266,7 +333,7 @@ async function passoAtendimento(
       estado.cliente = { nome, telefone: estado.cliente?.telefone ?? "" };
       return {
         etapa: "intencao",
-        texto: `Prazer, ${nome}! 😊 O que você deseja? ${SUGESTAO_INICIAL}`,
+        texto: `Prazer, ${nome}! 😊 O que você gostaria de pedir hoje?`,
       };
     }
 
@@ -300,14 +367,21 @@ async function passoAtendimento(
           texto: `Nossas regras:\n\n${persona.regras.trim()}\n\nQuer fazer um pedido?`,
         };
       }
+      // Pergunta sobre entrega/cobertura de bairro/taxa → responde com as
+      // regras REAIS do cadastro (nunca inventa bairro nem valor).
+      if (querEntrega(texto)) {
+        estado.tentativas = 0;
+        return responderSobreEntrega(estado.empresaId, texto);
+      }
       // Cumprimento/saudação genérica: resposta amigável SEM contar como
-      // tentativa e SEM transferir para humano. Simplesmente re-convida ao
-      // cardápio/pedido (ex.: "boa noite", "oi", "tudo bem?").
+      // tentativa, SEM transferir para humano e SEM repetir a saudação de
+      // boas-vindas (que já foi enviada no início da conversa). Apenas
+      // re-convida ao pedido/cardápio (ex.: "oi", "boa noite", "tudo bem?").
       if (querSaudacao(texto)) {
         estado.tentativas = 0;
         return {
           etapa: "intencao",
-          texto: `${saudacaoComPersona(persona, estado.cliente?.nome ?? null)} Você pode me dizer o nome do que gostaria de pedir (ex.: *calabresa*, *pizza de queijo*, *refrigerante 2L*) ou se prefere ver o *cardápio*. 😊`,
+          texto: "O que você gostaria de pedir hoje? 😊 (pode ser *pizza*, *lanche* ou *bebida* — ou ver o *cardápio*)",
         };
       }
       if (querPromocao(texto)) {
@@ -381,7 +455,8 @@ async function passoAtendimento(
           estado.pendentes = mult.pendentes;
           return resolverPedidoDe(texto, mult.primeiro!, estado);
         }
-        const achadosDiretos = await buscarProdutos(estado.empresaId, texto, 5);
+        const termo = limparBusca(texto);
+        const achadosDiretos = await buscarProdutos(estado.empresaId, termo, 5);
         if (achadosDiretos.length === 1) {
           estado.tentativas = 0;
           return selecionarProduto(achadosDiretos[0], estado);
@@ -813,6 +888,23 @@ function limpoEndereco(texto: string): boolean {
 }
 
 /**
+ * Isola o termo de busca de um produto removendo o "recheio" de conversa
+ * (verbos de pedido, dicas, artigos, cortesia). Permite que frases naturais
+ * como "me vê uma coca 2 litros" ou "qual o preço da calabresa" caiam na
+ * busca real do cardápio em vez de virarem "não entendi".
+ */
+function limparBusca(texto: string): string {
+  return texto
+    .replace(
+      /(quero pedir|quero fazer um pedido|gostaria de pedir|vou pedir|montar um pedido|fazer pedido|vou querer|quero comprar|gostaria de|quero saber|me v[êe]|manda ver|manda|pode ser|pra mim|quero|queria|eu quero|voc[eê]s t[eê]m|voc[eê] t[eê]m|tem|qual o pre[cç]o|qual pre[cç]o|quanto custa|quanto [eé]|qual o valor|me passa o|me passa|passa o|por favor|porfavor|um|uma|o|a|de|da|do|s[óo])/gi,
+      " "
+    )
+    .replace(/[?!,.;:]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Detecta se o texto lista mais de um item (separados por " e ", "," ou "mais").
  * Retorna o primeiro item para processar agora e os demais como pendentes.
  * Usa separadores RAROS no cardápio para não quebrar nomes compostos (ex.: "Borda de Queijo").
@@ -1142,6 +1234,20 @@ async function criarPedidoReal(estado: Estado): Promise<PassoResultado> {
   };
 }
 
+/**
+ * Detecta se a conversa ficou tempo demais sem interação (o cliente
+ * abandonou o pedido no meio). Só considera conversas que JÁ estavam em
+ * andamento — a primeira mensagem de uma conversa "nova" nunca expira.
+ */
+function conversaOciosa(conversa: { atualizadoEm: Date }): boolean {
+  return Date.now() - new Date(conversa.atualizadoEm).getTime() > TEMPO_MAXIMO_INATIVIDADE_MS;
+}
+
+/** Estado zerado (sem carrinho/endereço/pagamento) — para recomeço limpo. */
+function estadoZerado(empresaId: string): Estado {
+  return { empresaId, itens: [], tentativas: 0 };
+}
+
 /* --------------------- Ponto de entrada (persistência) --------------------- */
 
 export interface ResultadoMensagem {
@@ -1196,12 +1302,47 @@ export async function receberMensagemWhatsApp(
 
   // Conversa encerrada reabre com saudação curta (sem perder o vínculo).
   if (conversa.status === "encerrada") {
-    const estadoReinicio: Estado = { empresaId, itens: [], tentativas: 0 };
+    const estadoReinicio: Estado = estadoZerado(empresaId);
     await prisma.conversaWhatsApp.update({
       where: { id: conversa.id },
       data: { status: "nova", etapa: "intencao", estado: JSON.stringify(estadoReinicio) },
     });
     conversa = (await prisma.conversaWhatsApp.findUnique({ where: { id: conversa.id } }))!;
+  }
+
+  // TIMEOUT DE SESSÃO (PEDIDO 18 — robustez): se o cliente largou a
+  // conversa por mais de `TEMPO_MAXIMO_INATIVIDADE_MS` (abandonou um pedido
+  // no meio), zera o estado no banco ANTES de processar. Sem isso, um "sim"
+  // mandado muito depois confirmaria um carrinho velho (itens, endereço e
+  // forma de pagamento de uma conversa antiga) como pedido novo. Uma
+  // conversa "nova" (primeira mensagem) não tem tempo ocioso e nunca cai aqui.
+  const estadoPrevio = JSON.parse(conversa.estado || "{}") as Estado;
+  const tinhaContextoOcioso =
+    (Array.isArray(estadoPrevio.itens) && estadoPrevio.itens.length > 0) ||
+    !!estadoPrevio.canal ||
+    !!estadoPrevio.endereco ||
+    !!estadoPrevio.formaPagamento ||
+    estadoPrevio.chaveIdempotencia !== undefined;
+  let carrinhoLimpadoPorInatividade = false;
+  if (
+    conversa.status !== "nova" &&
+    conversa.etapa !== "criado" &&
+    !conversa.atendimentoHumano &&
+    conversaOciosa(conversa)
+  ) {
+    const estadoReinicio = estadoZerado(empresaId);
+    if ((estadoPrevio.cliente?.nome || conversa.nome) && estadoPrevio.cliente?.nome) {
+      estadoReinicio.cliente = {
+        nome: estadoPrevio.cliente.nome,
+        telefone: tel,
+      };
+    }
+    await prisma.conversaWhatsApp.update({
+      where: { id: conversa.id },
+      data: { status: "nova", etapa: "intencao", estado: JSON.stringify(estadoReinicio) },
+    });
+    conversa = (await prisma.conversaWhatsApp.findUnique({ where: { id: conversa.id } }))!;
+    if (tinhaContextoOcioso) carrinhoLimpadoPorInatividade = true;
   }
 
   const estado: Estado = { ...(JSON.parse(conversa.estado || "{}") as Estado), empresaId };
@@ -1227,6 +1368,11 @@ export async function receberMensagemWhatsApp(
       ? await normalizarComIa(conversa.etapa, limpo, estado, persona)
       : limpo;
     resposta = await passoAtendimento(conversa.etapa, textoDaMensagem, estado, persona);
+    // Avisa que a sessão antiga foi descartada (por inatividade) antes de
+    // processar, para o cliente entender que o carrinho anterior sumiu.
+    if (carrinhoLimpadoPorInatividade) {
+      resposta.texto = `Parece que ficamos algum tempo sem conversar, então deixei seu pedido antigo de lado e recomeçamos do zero. 😊\n\n${resposta.texto}`;
+    }
     // IA opcional: reescreve a resposta validada do motor de forma natural
     // e amigável, SEM inventar dados — os fatos (preços, opções, etapas,
     // pedido) vêm todos do motor; a IA só melhora o texto. Em qualquer

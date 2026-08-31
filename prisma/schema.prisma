@@ -81,6 +81,12 @@ model Empresa {
   trialFimEm     DateTime?
   planoInicioEm  DateTime?
   vencimentoEm   DateTime?
+  // Fim do período de CARÊNCIA da assinatura (7 dias corridos a partir do
+  // vencimento). Enquanto `vencimentoEm` já passou mas `carenciaAte` ainda
+  // não, a empresa segue ATIVA em carência (operações liberadas + banner de
+  // aviso). Só bloqueia de verdade (suspensa ao uso normal, não aos dados)
+  // quando `carenciaAte` também passa sem pagamento. Ver `assinatura.ts`.
+  carenciaAte    DateTime?
   // Preenchido a cada requisição autenticada bem-sucedida (painel de
   // diagnóstico do Super Admin: "última atividade").
   ultimaAtividadeEm DateTime?
@@ -141,6 +147,7 @@ model Empresa {
   backups              Backup[]
   auditoria            Auditoria[]
   usosIa               UsoIa[]
+  pagamentosAssinatura AssinaturaPagamento[]
 
   @@index([status])
 }
@@ -337,6 +344,11 @@ model Auditoria {
   usuarioNome String?
   acao        String
   detalhe     String?
+  // Estado do registro ANTES e DEPOIS da ação (JSON string) — para
+  // auditoria do Super Admin com diff de mudanças (ver
+  // registrarAuditoriaPar em src/lib/super-admin/auditoria.ts).
+  estadoAnterior String?
+  estadoNovo     String?
   ip          String?
   criadoEm    DateTime  @default(now())
 
@@ -698,6 +710,42 @@ model Pagamento {
   @@index([pedidoId])
   @@index([empresaId])
   @@index([repassadoAoCaixa])
+}
+
+// -------------------- Pagamentos de assinatura (plataforma) ----------------
+// Registro de pagamento da ASSINATURA da empresa (feito pelo Super Admin via
+// painel) — NÃO é o pagamento de um pedido (a model `Pagamento` acima cuida
+// disso, e fica no schema do tenant). Fica na PLATAFORMA porque pertence ao
+// ciclo comercial da empresa, não aos dados operacionais do tenant, e é
+// consultado pelo painel do Super Admin antes de saber qual tenant ativar.
+//
+// Ao registrar um pagamento, o sistema recalcula `planoInicioEm = agora`,
+// `vencimentoEm = agora + cicloDias`, `carenciaAte = vencimentoEm + 7` e
+// volta o status para "ativa" (ver src/lib/super-admin/assinatura.ts),
+// reativando a empresa sem nunca apagar os dados dela.
+model AssinaturaPagamento {
+  id            String   @id @default(cuid())
+  empresa       Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresaId     String
+  // pix | dinheiro | cartao | boleto | manual | outro
+  forma         String
+  valor         Float
+  moeda         String   @default("BRL")
+  // Data em que foi registrado o pagamento (normalmente hoje).
+  pagoEm        DateTime @default(now())
+  // Ciclo contratado em dias (30 = mensal). Recalcula vencimentoEm.
+  cicloDias     Int      @default(30)
+  // Chave de idempotência do Super Admin (evita registrar 2x o mesmo
+  // pagamento por retry/clique duplo) — por empresa, como em `Pagamento`.
+  idempotencyKey String?
+  // Quem registrou (Super Admin).
+  registradoPor String?
+  observacoes   String?
+  criadoEm      DateTime @default(now())
+
+  @@unique([empresaId, idempotencyKey])
+  @@index([empresaId])
+  @@index([pagoEm])
 }
 
 // --------------------------------- Caixa ---------------------------------

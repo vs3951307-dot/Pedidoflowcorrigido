@@ -35,6 +35,7 @@ export const empresaAtualizarSchema = z.object({
   modulos: z.array(z.string()).optional(),
   trialFimEm: z.string().datetime().nullable().optional(),
   vencimentoEm: z.string().datetime().nullable().optional(),
+  carenciaAte: z.string().datetime().nullable().optional(),
   observacoes: z.string().max(2000).nullable().optional(),
   razaoSocial: z.string().max(160).nullable().optional(),
   cnpj: z.string().max(30).nullable().optional(),
@@ -49,8 +50,18 @@ export const empresaAtualizarSchema = z.object({
     .optional(),
 });
 
-export const planoCriarSchema = z.object({
-  nome: z.string().trim().min(1, "informe o nome do plano").max(60),
+export const pagamentoAssinaturaSchema = z.object({
+  valor: z.coerce.number().finite().positive("o valor deve ser maior que zero"),
+  forma: z
+    .enum(["pix", "dinheiro", "cartao", "boleto", "manual", "outro"])
+    .default("manual"),
+  cicloDias: z.coerce.number().int().min(1).max(365).default(30),
+  pagoEm: z.string().datetime().optional(),
+  idempotencyKey: z.string().trim().min(1).max(120).optional(),
+  observacoes: z.string().max(500).optional(),
+});
+
+export const planoCriarSchema = z.object({  nome: z.string().trim().min(1, "informe o nome do plano").max(60),
   slug: z
     .string()
     .trim()

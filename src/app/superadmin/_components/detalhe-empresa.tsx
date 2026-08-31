@@ -68,6 +68,7 @@ interface EmpresaDetalhe {
   menuConfig: { chave: string; rotulo: string; visivel: boolean; ordem?: number }[];
   trialFimEm: string | null;
   vencimentoEm: string | null;
+  carenciaAte: string | null;
   ultimaAtividadeEm: string | null;
   observacoes: string | null;
   criadoEm: string;
@@ -228,7 +229,7 @@ export function DetalheEmpresa({ empresaId }: { empresaId: string }) {
         </TabsContent>
 
         <TabsContent value="stats" className="mt-4">
-          <EstatsEmpresa empresa={empresa} />
+          <EstatsEmpresa empresa={empresa} empresaId={empresa.id} onRecarregar={carregar} />
         </TabsContent>
       </Tabs>
     </div>
@@ -638,7 +639,57 @@ function DialogUsuario({ open, onOpenChange, editando, empresaId, onSalvo }: {
   );
 }
 
-function EstatsEmpresa({ empresa }: { empresa: EmpresaDetalhe }) {
+function EstatsEmpresa({ empresa, empresaId, onRecarregar }: { empresa: EmpresaDetalhe; empresaId: string; onRecarregar: () => void }) {
+  const [pagamentoAberto, setPagamentoAberto] = React.useState(false);
+  const [enviandoPagamento, setEnviandoPagamento] = React.useState(false);
+
+  // Estado efetivo de assinatura (carência derivada do calendário, não do
+  // status em string) — espelha a lógica de `src/lib/assinatura.ts`.
+  const agora = Date.now();
+  const venc = empresa.vencimentoEm ? new Date(empresa.vencimentoEm + "T23:59:59.000Z").getTime() : null;
+  const carencia = empresa.carenciaAte ? new Date(empresa.carenciaAte + "T23:59:59.000Z").getTime() : null;
+  let estadoAssinatura: { rotulo: string; cor: "free" | "waiting" | "bill"; detalhe: string } | null = null;
+  if (venc === null) {
+    estadoAssinatura = null; // sem vencimento cadastrado
+  } else if (venc > agora) {
+    estadoAssinatura = { rotulo: "Em dia", cor: "free", detalhe: "Assinatura vigente." };
+  } else {
+    const fimCarencia = carencia ?? venc + 7 * 24 * 60 * 60 * 1000;
+    if (fimCarencia >= agora) {
+      const dias = Math.max(0, Math.ceil((fimCarencia - agora) / (24 * 60 * 60 * 1000)));
+      estadoAssinatura = { rotulo: "EM CARÊNCIA", cor: "waiting", detalhe: `Vencido — ${dias} dia(s) para regularizar antes da suspensão automática.` };
+    } else {
+      estadoAssinatura = { rotulo: "VENCIDA", cor: "bill", detalhe: "Carência esgotada — uso normal bloqueado até regularizar." };
+    }
+  }
+
+  async function registrarPagamento(formulario: { valor: string; forma: string; cicloDias: string; observacoes: string }) {
+    if (!Number(formulario.valor) || Number(formulario.valor) <= 0) {
+      toast.error("Informe um valor válido.");
+      return;
+    }
+    setEnviandoPagamento(true);
+    try {
+      await chamar(`/api/superadmin/empresas/${empresaId}/pagamento-assinatura`, {
+        method: "POST",
+        body: JSON.stringify({
+          valor: Number(formulario.valor),
+          forma: formulario.forma,
+          cicloDias: Number(formulario.cicloDias) || 30,
+          observacoes: formulario.observacoes || undefined,
+          idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        }),
+      });
+      toast.success("Pagamento registrado — assinatura reativada.");
+      setPagamentoAberto(false);
+      onRecarregar();
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Falha ao registrar pagamento.");
+    } finally {
+      setEnviandoPagamento(false);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <SecaoCard titulo="Pedidos">
@@ -670,19 +721,101 @@ function EstatsEmpresa({ empresa }: { empresa: EmpresaDetalhe }) {
         <p className="text-lg font-semibold">{empresa.usoIAMesAtual} / {empresa.limiteMensagensIA ?? "∞"}</p>
         <p className="text-xs text-muted-foreground">mensagens este mês</p>
       </SecaoCard>
-      <SecaoCard titulo="Vigência">
-        <div className="flex flex-col gap-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Trial:</span>
-            <span>{fmtData(empresa.trialFimEm)}</span>
+      <SecaoCard titulo="Assinatura">
+        {estadoAssinatura ? (
+          <div className="mb-2 flex items-center gap-2">
+            <Badge variant={estadoAssinatura.cor}>{estadoAssinatura.rotulo}</Badge>
+            <span className="text-xs text-muted-foreground">{estadoAssinatura.detalhe}</span>
           </div>
+        ) : (
+          <p className="mb-2 text-xs text-muted-foreground">Sem vencimento cadastrado.</p>
+        )}
+        <div className="flex flex-col gap-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Vencimento:</span>
             <span>{fmtData(empresa.vencimentoEm)}</span>
           </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Fim da carência:</span>
+            <span>{fmtData(empresa.carenciaAte)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Trial:</span>
+            <span>{fmtData(empresa.trialFimEm)}</span>
+          </div>
         </div>
+        <Button size="sm" className="mt-3 w-full" onClick={() => setPagamentoAberto(true)} disabled={enviandoPagamento}>
+          <CreditCard className="mr-2 h-4 w-4" />
+          Registrar pagamento da assinatura
+        </Button>
       </SecaoCard>
+
+      <Dialog open={pagamentoAberto} onOpenChange={setPagamentoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar pagamento da assinatura</DialogTitle>
+          </DialogHeader>
+          <PagamentoAssinaturaForm onConfirmar={registrarPagamento} enviando={enviandoPagamento} vencimentoAtual={empresa.vencimentoEm} />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function PagamentoAssinaturaForm({ onConfirmar, enviando, vencimentoAtual }: { onConfirmar: (f: { valor: string; forma: string; cicloDias: string; observacoes: string }) => void; enviando: boolean; vencimentoAtual: string | null }) {
+  const [valor, setValor] = React.useState("");
+  const [forma, setForma] = React.useState("pix");
+  const [cicloDias, setCicloDias] = React.useState("30");
+  const [observacoes, setObservacoes] = React.useState("");
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onConfirmar({ valor, forma, cicloDias, observacoes });
+      }}
+    >
+      {vencimentoAtual && (
+        <p className="text-xs text-muted-foreground">
+          Vencimento atual: {fmtData(vencimentoAtual)}. Após o pagamento, o ciclo reinicia para hoje + ciclo.
+        </p>
+      )}
+      <Field label="Valor (R$)">
+        <Input type="number" step="0.01" min="0" value={valor} onChange={(e) => setValor(e.target.value)} required />
+      </Field>
+      <Field label="Forma de pagamento">
+        <Select value={forma} onValueChange={setForma}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pix">Pix</SelectItem>
+            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+            <SelectItem value="cartao">Cartão</SelectItem>
+            <SelectItem value="boleto">Boleto</SelectItem>
+            <SelectItem value="manual">Manual/outro</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Ciclo contratado (dias)">
+        <Select value={cicloDias} onValueChange={setCicloDias}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">30 dias (mensal)</SelectItem>
+            <SelectItem value="90">90 dias (trimestral)</SelectItem>
+            <SelectItem value="180">180 dias</SelectItem>
+            <SelectItem value="365">365 dias (anual)</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Observações (opcional)">
+        <Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Ex.: pagamento confirmado no PIX" />
+      </Field>
+      <DialogFooter>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+          Confirmar pagamento
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

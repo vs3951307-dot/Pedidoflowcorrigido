@@ -1,4 +1,5 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
+import { AvisoCarencia } from "@/components/assinatura/aviso-carencia";
 import { PdvProvider } from "@/app/pdv/_lib/pdv-context";
 import { CaixaProvider } from "@/app/pdv/_lib/caixa-context";
 import { RetiradaProvider } from "@/app/pdv/_lib/retirada-context";
@@ -19,7 +20,9 @@ export default async function PdvLayout({ children }: { children: React.ReactNod
   const usuario = await exigirRota("pdv");
 
   return (
-    <CaixaProvider>
+    <>
+      <AvisoCarencia ativo={usuario.assinaturaWarning} diasRestantes={usuario.diasRestantesCarencia} />
+      <CaixaProvider>
       <RetiradaProvider>
         <SalaoProvider>
           <PdvProvider>
@@ -40,5 +43,6 @@ export default async function PdvLayout({ children }: { children: React.ReactNod
         </SalaoProvider>
       </RetiradaProvider>
     </CaixaProvider>
+    </>
   );
 }

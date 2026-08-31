@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { autorizarSuperAdmin } from "@/lib/super-admin/auth";
+import { autorizarSuperAdmin, registrarAuditoriaSuperAdmin } from "@/lib/super-admin/auth";
 import { validarCorpo } from "@/lib/validar";
 import { empresaAtualizarSchema } from "@/lib/schemas/superadmin";
 import { ehModuloValido, parseModulos, serializarModulos } from "@/lib/modulos";
@@ -9,6 +9,7 @@ import { invalidarClienteTenant } from "@/lib/tenant-db";
 import { gerarBackupCompleto } from "@/lib/backup";
 import { mascararSegredo } from "@/lib/crypto-segredos";
 import { comTratamentoDeErro } from "@/lib/api-erro";
+import { calcularCarenciaAte } from "@/lib/assinatura";
 
 /** Detalhe de uma empresa (painel Super Admin). */
 export const GET = comTratamentoDeErro("superadmin.empresas.id.GET", async (_req: NextRequest, { params }: { params: { id: string } }) => {
@@ -46,6 +47,7 @@ export const GET = comTratamentoDeErro("superadmin.empresas.id.GET", async (_req
       menuConfig: parseMenuConfig(empresa.menuConfig),
       trialFimEm: empresa.trialFimEm,
       vencimentoEm: empresa.vencimentoEm,
+      carenciaAte: empresa.carenciaAte,
       ultimaAtividadeEm: empresa.ultimaAtividadeEm,
       observacoes: empresa.observacoes,
       criadoEm: empresa.criadoEm,
@@ -118,6 +120,16 @@ export const PATCH = comTratamentoDeErro("superadmin.empresas.id.PATCH", async (
   }
   if (dados.trialFimEm !== undefined) atualizacao.trialFimEm = dados.trialFimEm ? new Date(dados.trialFimEm + "T23:59:59.000Z") : null;
   if (dados.vencimentoEm !== undefined) atualizacao.vencimentoEm = dados.vencimentoEm ? new Date(dados.vencimentoEm + "T23:59:59.000Z") : null;
+  // CARÊNCIA: quando o vencimento muda via painel, recalcula
+  // automaticamente a `carenciaAte` (vencimento + 7 dias corr.) a menos
+  // que o Super Admin informe um valor explícito. Garante que uma edição
+  // de vencimento não deixe a carência dessincronizada.
+  if (dados.carenciaAte !== undefined) {
+    atualizacao.carenciaAte = dados.carenciaAte ? new Date(dados.carenciaAte + "T23:59:59.000Z") : null;
+  } else if (dados.vencimentoEm !== undefined) {
+    const novo = dados.vencimentoEm ? new Date(dados.vencimentoEm + "T23:59:59.000Z") : null;
+    atualizacao.carenciaAte = calcularCarenciaAte(novo);
+  }
   if (dados.observacoes !== undefined) atualizacao.observacoes = dados.observacoes;
   if (dados.razaoSocial !== undefined) atualizacao.razaoSocial = dados.razaoSocial;
   if (dados.cnpj !== undefined) atualizacao.cnpj = dados.cnpj;
@@ -135,6 +147,26 @@ export const PATCH = comTratamentoDeErro("superadmin.empresas.id.PATCH", async (
   }
 
   const atualizada = await prisma.empresa.update({ where: { id: existente.id }, data: atualizacao });
+
+  // Auditoria com ANTES/DEPOIS para as mudanças de assinatura/status/
+  // plano/vencimento — o Super Admin vê exatamente o que mudou.
+  const camposSensiveis = ["status", "plano", "planoId", "modulos", "vencimentoEm", "carenciaAte", "trialFimEm", "limiteMensagensIA"];
+  const estadoAnterior: Record<string, unknown> = {};
+  const estadoNovo: Record<string, unknown> = {};
+  for (const campo of camposSensiveis) {
+    const antes = (existente as Record<string, unknown>)[campo];
+    const depois = (atualizada as Record<string, unknown>)[campo];
+    if (JSON.stringify(antes) !== JSON.stringify(depois)) {
+      estadoAnterior[campo] = antes ?? null;
+      estadoNovo[campo] = depois ?? null;
+    }
+  }
+  await registrarAuditoriaSuperAdmin(
+    "empresa_editada",
+    `Super Admin ${acesso.superAdmin.nome} editou a empresa "${existente.nome}"`,
+    acesso.superAdmin.id,
+    { estadoAnterior, estadoNovo, empresaId: existente.id }
+  );
 
   return NextResponse.json({
     ok: true,

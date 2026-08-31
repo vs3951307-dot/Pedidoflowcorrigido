@@ -13,6 +13,7 @@ import { verificarLimite, ipDaRequisicao } from "@/lib/rate-limit";
 import { logErro } from "@/lib/api-erro";
 import { plataformaPrisma, prisma } from "@/lib/prisma";
 import { ativarTenant } from "@/lib/tenant-db";
+import { situacaoAssinatura } from "@/lib/assinatura";
 import {
   classificarAnexo,
   guardarAnexo,
@@ -196,10 +197,26 @@ export async function POST(req: NextRequest) {
     // Ativa o tenant desta empresa ANTES de acessar modelos de tenant.
     const empresa = await plataformaPrisma.empresa.findUnique({
       where: { id: empresaId },
-      select: { id: true, schemaBanco: true, databaseUrlSecreta: true, slug: true },
+      select: { id: true, schemaBanco: true, databaseUrlSecreta: true, slug: true, status: true, vencimentoEm: true, carenciaAte: true },
     });
     if (!empresa) {
       console.warn(`Webhook WhatsApp: empresa ${empresaId} não encontrada na plataforma.`);
+      continue;
+    }
+
+    // SEGURANÇA (GAP corrigido): uma empresa BLOQUEADA/SUSPENSA/vencida
+    // (carência esgotada) não pode continuar operando o WhatsApp. Antes,
+    // este webhook resolvia o tenant e processava mensagens normalmente
+    // para qualquer empresa — um negócio suspenso por inadimplência
+    // seguia criando pedidos via IA. Agora: se a empresa não pode usar o
+    // sistema, confirma o recebimento (200, senão a Meta reenvia pra
+    // sempre) mas NÃO processa nenhuma mensagem.
+    if (!["ativa", "teste"].includes(empresa.status)) {
+      console.warn(`Webhook WhatsApp: empresa ${empresaId} com status "${empresa.status}" — mensagens ignoradas.`);
+      continue;
+    }
+    if (situacaoAssinatura(empresa).estado === "vencida") {
+      console.warn(`Webhook WhatsApp: empresa ${empresaId} com assinatura vencida (carência esgotada) — mensagens ignoradas.`);
       continue;
     }
     ativarTenant(empresa);

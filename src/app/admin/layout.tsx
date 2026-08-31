@@ -1,4 +1,5 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
+import { AvisoCarencia } from "@/components/assinatura/aviso-carencia";
 import { exigirRota } from "@/lib/acesso";
 import { temPermissao } from "@/lib/permissao";
 
@@ -30,7 +31,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const navItems = ADMIN_NAV_ITEMS.filter((item) => !("modulo" in item) || usuario.modulosAtivos.includes(item.modulo));
 
   return (
-    <AppShell
+    <>
+      <AvisoCarencia ativo={usuario.assinaturaWarning} diasRestantes={usuario.diasRestantesCarencia} />
+      <AppShell
       greetingName={usuario.nome}
       empresaNome={usuario.empresaNome}
       empresaId={usuario.empresaId}
@@ -43,5 +46,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     >
       {children}
     </AppShell>
+    </>
   );
 }

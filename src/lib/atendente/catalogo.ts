@@ -147,5 +147,20 @@ export async function horarioFuncionamento(empresaId: string): Promise<string | 
   }
 }
 
+/** Nome fantasia da loja informado na config `empresa` (usado na saudação). */
+export async function nomeFantasia(empresaId: string): Promise<string | null> {
+  const registro = await prisma.configuracao.findUnique({
+    where: { empresaId_chave: { empresaId, chave: "empresa" } },
+  });
+  if (!registro) return null;
+  try {
+    const empresa = JSON.parse(registro.valor) as Record<string, unknown>;
+    const nome = empresa.nomeFantasia;
+    return typeof nome === "string" && nome.trim() ? nome.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Re-export das regras de taxa (mesma fonte do PDV delivery). */
 export { lerConfigTaxaEntrega, calcularTaxaEntrega };

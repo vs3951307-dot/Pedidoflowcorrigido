@@ -9,11 +9,16 @@ import { prisma } from "@/lib/prisma";
 /**
  * Registra auditoria de ações sensíveis do Super Admin na tabela Auditoria
  * (schema public, tenantId = "superadmin").
+ *
+ * Aceita opcionalmente o estado antes/depois (JSON) da ação para auditoria
+ * com diff (ex.: mudança de status/vencimento/plano de uma empresa) e o
+ * `empresaId` afetado, além do Super Admin que executou.
  */
 export async function registrarAuditoriaSuperAdmin(
   acao: string,
   detalhes: string,
-  superAdminId: string
+  superAdminId: string,
+  extras?: { estadoAnterior?: unknown; estadoNovo?: unknown; empresaId?: string | null }
 ): Promise<void> {
   try {
     await prisma.auditoria.create({
@@ -21,7 +26,9 @@ export async function registrarAuditoriaSuperAdmin(
         acao,
         detalhe: detalhes,
         usuarioNome: "Super Admin",
-        empresaId: null,
+        empresaId: extras?.empresaId ?? null,
+        estadoAnterior: extras?.estadoAnterior !== undefined ? JSON.stringify(extras.estadoAnterior) : null,
+        estadoNovo: extras?.estadoNovo !== undefined ? JSON.stringify(extras.estadoNovo) : null,
         criadoEm: new Date(),
       },
     });

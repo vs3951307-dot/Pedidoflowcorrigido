@@ -7,6 +7,7 @@ import { usuarioDaSessao, STATUS_EMPRESA_ATIVOS } from "@/lib/auth";
 import { temPermissao, type Recurso, type UsuarioComPermissoes } from "@/lib/permissao";
 import { parseModulos, MODULO_DO_RECURSO } from "@/lib/modulos";
 import { ativarTenant } from "@/lib/tenant-db";
+import { situacaoAssinatura, mensagemBloqueioAssinatura } from "@/lib/assinatura";
 
 // Símbolos puros (papéis, recursos, rótulos) — re-exportados para os
 // consumidores de server (rotas da API e páginas).
@@ -38,7 +39,7 @@ export {
  * `where` de consulta/alteração/exclusão e em todo `create`.
  */
 export type Autorizacao =
-  | { ok: true; usuario: UsuarioComPermissoes; empresaId: string }
+  | { ok: true; usuario: UsuarioComPermissoes; empresaId: string; assinaturaWarning?: boolean; diasRestantesCarencia?: number }
   | { ok: false; resposta: NextResponse };
 
 /**
@@ -93,11 +94,16 @@ export async function autorizar(...recursos: Recurso[]): Promise<Autorizacao> {
       ),
     };
   }
-  if (usuario.empresa.vencimentoEm && usuario.empresa.vencimentoEm < agora) {
+  // CARÊNCIA (PEDIDO: "7 dias corridos de tolerância após o vencimento
+  // antes de bloqueio"): como antes, um vencimento passado NÃO bloqueia
+  // na hora — a empresa entra em carência por `CARENCIA_DIAS` dias
+  // (campo `carenciaAte`). Só bloqueia quando a carência também esgota.
+  const sitAssinatura = situacaoAssinatura(usuario.empresa);
+  if (sitAssinatura.estado === "vencida") {
     return {
       ok: false,
       resposta: NextResponse.json(
-        { erro: "Sua assinatura está vencida. Regularize o pagamento para continuar usando o PedidoFlow." },
+        { erro: mensagemBloqueioAssinatura(usuario.empresa) },
         { status: 402 }
       ),
     };
@@ -138,7 +144,15 @@ export async function autorizar(...recursos: Recurso[]): Promise<Autorizacao> {
       };
     }
   }
-  return { ok: true, usuario: usuario as UsuarioComPermissoes, empresaId: usuario.empresaId };
+  return {
+    ok: true,
+    usuario: usuario as UsuarioComPermissoes,
+    empresaId: usuario.empresaId,
+    // Carência detectada → o frontend pode exibir um banner de aviso
+    // sem bloquear o uso (a operação segue permitida).
+    assinaturaWarning: sitAssinatura.estado === "carência",
+    diasRestantesCarencia: sitAssinatura.estado === "carência" ? sitAssinatura.diasRestantesCarencia : undefined,
+  };
 }
 
 /**
@@ -148,7 +162,7 @@ export async function autorizar(...recursos: Recurso[]): Promise<Autorizacao> {
  */
 export async function exigirRota(
   ...recursos: Recurso[]
-): Promise<UsuarioComPermissoes & { empresaId: string; empresaNome: string; empresaLogoUrl: string | null; empresaTema: Record<string, unknown> | null; modulosAtivos: string[] }> {
+): Promise<UsuarioComPermissoes & { empresaId: string; empresaNome: string; empresaLogoUrl: string | null; empresaTema: Record<string, unknown> | null; modulosAtivos: string[]; assinaturaWarning: boolean; diasRestantesCarencia: number }> {
   const token = cookies().get("sessao")?.value;
   const usuario = await usuarioDaSessao(token);
   if (!usuario || usuario.ativo === false) {
@@ -160,12 +174,14 @@ export async function exigirRota(
   // Mesma correção do item 36 aplicada em `autorizar()` — trial/
   // vencimento vencidos bloqueiam o acesso à PÁGINA também, não só à
   // API (senão a página carregava normalmente e só as chamadas
-  // internas de API falhavam, uma experiência confusa).
+  // internas de API falhavam, uma experiência confusa). Agora com
+  // carência de 7 dias: só bloqueia quando a carência esgota.
   const agora = new Date();
   if (usuario.empresa.status === "teste" && usuario.empresa.trialFimEm && usuario.empresa.trialFimEm < agora) {
     redirect("/login?erro=trial_vencido");
   }
-  if (usuario.empresa.vencimentoEm && usuario.empresa.vencimentoEm < agora) {
+  const sitAssinatura = situacaoAssinatura(usuario.empresa);
+  if (sitAssinatura.estado === "vencida") {
     redirect("/login?erro=assinatura_vencida");
   }
   ativarTenant(usuario.empresa);
@@ -189,6 +205,8 @@ export async function exigirRota(
     empresaLogoUrl: usuario.empresa.logoUrl ?? null,
     empresaTema: (usuario.empresa.tema && typeof usuario.empresa.tema === "object" ? usuario.empresa.tema : null) as Record<string, unknown> | null,
     modulosAtivos,
+    assinaturaWarning: sitAssinatura.estado === "carência",
+    diasRestantesCarencia: sitAssinatura.estado === "carência" ? sitAssinatura.diasRestantesCarencia : 0,
   };
 }
 

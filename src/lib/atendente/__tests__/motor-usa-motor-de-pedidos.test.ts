@@ -54,4 +54,14 @@ describe("motor do WhatsApp usa o motor de pedidos compartilhado", () => {
   it("gera a chave de idempotência antes da confirmação, junto do carrinho", () => {
     expect(fonte).toMatch(/estado\.chaveIdempotencia\s*=\s*novaChaveIdempotencia\(\)/);
   });
+
+  it("descarta o estado de uma conversa que ficou tempo demais sem uso (sessão expirada)", () => {
+    // Guarda contra a volta do bug de sessão: sem timeout, um cliente que
+    // abandonou o pedido voltava dias depois mandando "sim" e confirmava um
+    // carrinho velho como pedido novo.
+    expect(fonte).toMatch(/TEMPO_MAXIMO_INATIVIDADE_MS/);
+    expect(fonte).toMatch(/conversaOciosa\(/);
+    expect(fonte).toMatch(/estadoZerado\(/);
+    expect(fonte).toMatch(/carrinhoLimpadoPorInatividade/);
+  });
 });

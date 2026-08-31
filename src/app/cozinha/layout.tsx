@@ -1,4 +1,5 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
+import { AvisoCarencia } from "@/components/assinatura/aviso-carencia";
 import { exigirRota } from "@/lib/acesso";
 import { temPermissao } from "@/lib/permissao";
 
@@ -12,7 +13,9 @@ export default async function CozinhaLayout({ children }: { children: React.Reac
   const usuario = await exigirRota("kds");
 
   return (
-    <AppShell
+    <>
+      <AvisoCarencia ativo={usuario.assinaturaWarning} diasRestantes={usuario.diasRestantesCarencia} />
+      <AppShell
       greetingName={usuario.nome}
       empresaNome={usuario.empresaNome}
       empresaId={usuario.empresaId}
@@ -25,5 +28,6 @@ export default async function CozinhaLayout({ children }: { children: React.Reac
     >
       {children}
     </AppShell>
+    </>
   );
 }

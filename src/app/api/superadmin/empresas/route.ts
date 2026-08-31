@@ -10,6 +10,7 @@ import { nomeSchemaDoSlug } from "@/lib/tenant-db";
 import { provisionarSchemaEmpresa } from "@/lib/tenant-provisionamento";
 import { criptografarSegredo, mascararSegredo } from "@/lib/crypto-segredos";
 import { comTratamentoDeErro } from "@/lib/api-erro";
+import { situacaoAssinatura } from "@/lib/assinatura";
 
 /** Lista todas as empresas da plataforma (painel Super Admin). */
 export const GET = comTratamentoDeErro("superadmin.empresas.GET", async () => {
@@ -34,6 +35,9 @@ export const GET = comTratamentoDeErro("superadmin.empresas.GET", async () => {
       modulos: parseModulos(e.modulos),
       trialFimEm: e.trialFimEm,
       vencimentoEm: e.vencimentoEm,
+      carenciaAte: e.carenciaAte,
+      situacaoAssinatura: situacaoAssinatura(e).estado,
+      diasRestantesCarencia: situacaoAssinatura(e).diasRestantesCarencia,
       ultimaAtividadeEm: e.ultimaAtividadeEm,
       criadoEm: e.criadoEm,
       usuarios: e._count.usuarios,
