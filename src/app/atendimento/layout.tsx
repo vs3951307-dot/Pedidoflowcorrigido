@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { exigirRota } from "@/lib/acesso";
+import { temPermissao } from "@/lib/permissao";
 
 const ATENDIMENTO_NAV_ITEMS = [
   { label: "Atendimento", href: "/atendimento", icon: "message-circle" },
@@ -22,6 +23,7 @@ export default async function AtendimentoLayout({ children }: { children: React.
       navItems={ATENDIMENTO_NAV_ITEMS}
       activeHref="/atendimento"
       notificationCount={0}
+      copilotoDisponivel={usuario.modulosAtivos.includes("copiloto") && temPermissao(usuario, "admin")}
     >
       {children}
     </AppShell>

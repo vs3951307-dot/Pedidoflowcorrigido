@@ -43,6 +43,13 @@ export const POST = comTratamentoDeErro("mesas.id.itens.POST", async (req: NextR
     return NextResponse.json({ erro: "Ação inválida. Use adicionar, atualizar ou remover." }, { status: 400 });
   }
 
+  // A config de pizza é lida AQUI, FORA da transação. Ela usa `prisma`
+  // (cliente global do tenant) e, com `connection_limit=1` da DATABASE_URL
+  // do deploy, qualquer query global DENTRO do `$transaction` interativo
+  // estoura o timeout do pool (a única conexão já está ocupada pela
+  // transação) → 500 + rollback → o item nunca era gravado na comanda.
+  const configPizza = await lerConfigPizza(empresaId);
+
   let resultado: { id: string; criadoEm: Date; total: number; itens: unknown[] };
   try {
     resultado = await prisma.$transaction(async (tx) => {
@@ -89,8 +96,6 @@ export const POST = comTratamentoDeErro("mesas.id.itens.POST", async (req: NextR
         if (!produto || produto.empresaId !== empresaId) {
           throw new ErroComanda(`Produto inexistente no cadastro: "${bruto.nome ?? "Item"}". Atualize o cardápio.`);
         }
-
-        const configPizza = await lerConfigPizza(empresaId);
 
         // Todos os produtos que são pizzas, para resolver o preço de CADA
         // sabor escolhido (cada sabor é um Produto próprio).

@@ -1,5 +1,6 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { exigirRota } from "@/lib/acesso";
+import { temPermissao } from "@/lib/permissao";
 
 const ADMIN_NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", icon: "layout-dashboard" },
@@ -38,6 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       navItems={navItems}
       activeHref="/admin"
       notificationCount={0}
+      copilotoDisponivel={usuario.modulosAtivos.includes("copiloto") && temPermissao(usuario, "admin")}
     >
       {children}
     </AppShell>

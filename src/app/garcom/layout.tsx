@@ -1,6 +1,7 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { GarcomProvider } from "@/app/garcom/_lib/garcom-context";
 import { exigirRota } from "@/lib/acesso";
+import { temPermissao } from "@/lib/permissao";
 
 const GARCOM_NAV_ITEMS = [{ label: "Mesas", href: "/garcom", icon: "layout-grid" }];
 
@@ -22,6 +23,7 @@ export default async function GarcomLayout({ children }: { children: React.React
         navItems={GARCOM_NAV_ITEMS}
         activeHref="/garcom"
         notificationCount={2}
+        copilotoDisponivel={usuario.modulosAtivos.includes("copiloto") && temPermissao(usuario, "admin")}
       >
         {children}
       </AppShell>

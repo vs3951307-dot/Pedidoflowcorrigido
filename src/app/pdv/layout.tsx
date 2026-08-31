@@ -4,6 +4,7 @@ import { CaixaProvider } from "@/app/pdv/_lib/caixa-context";
 import { RetiradaProvider } from "@/app/pdv/_lib/retirada-context";
 import { SalaoProvider } from "@/app/pdv/_lib/salao-context";
 import { exigirRota } from "@/lib/acesso";
+import { temPermissao } from "@/lib/permissao";
 
 const PDV_NAV_ITEMS = [
   { label: "Novo pedido", href: "/pdv", icon: "shopping-bag" },
@@ -31,6 +32,7 @@ export default async function PdvLayout({ children }: { children: React.ReactNod
               navItems={PDV_NAV_ITEMS}
               activeHref="/pdv"
               notificationCount={0}
+              copilotoDisponivel={usuario.modulosAtivos.includes("copiloto") && temPermissao(usuario, "admin")}
             >
               {children}
             </AppShell>

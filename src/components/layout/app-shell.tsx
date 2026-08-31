@@ -8,6 +8,7 @@ import { Sidebar, defaultNavItems, type NavItem } from "@/components/layout/side
 import { Header } from "@/components/layout/header";
 import { useRelogio } from "@/hooks/use-relogio";
 import { TenantSplashScreen, useSplashOnce } from "@/components/tenant-splash";
+import { CopilotoFlutuante } from "@/components/copiloto/copiloto-flutuante";
 
 interface AppShellProps {
   greetingName: string;
@@ -18,6 +19,8 @@ interface AppShellProps {
   navItems?: NavItem[];
   activeHref?: string;
   notificationCount?: number;
+  /** Mostra o botão flutuante do Copiloto (assistente de suporte). */
+  copilotoDisponivel?: boolean;
   children: React.ReactNode;
 }
 
@@ -45,6 +48,7 @@ export function AppShell({
   navItems = defaultNavItems,
   activeHref,
   notificationCount = 0,
+  copilotoDisponivel = false,
   children,
 }: AppShellProps) {
   const router = useRouter();
@@ -119,6 +123,10 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      {copilotoDisponivel && (
+        <CopilotoFlutuante nomeUsuario={greetingName} empresaNome={empresaNome} />
+      )}
     </div>
   );
 }

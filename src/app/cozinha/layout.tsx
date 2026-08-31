@@ -1,5 +1,6 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { exigirRota } from "@/lib/acesso";
+import { temPermissao } from "@/lib/permissao";
 
 const COZINHA_NAV_ITEMS = [{ label: "Produção", href: "/cozinha", icon: "chef" }];
 
@@ -20,6 +21,7 @@ export default async function CozinhaLayout({ children }: { children: React.Reac
       navItems={COZINHA_NAV_ITEMS}
       activeHref="/cozinha"
       notificationCount={0}
+      copilotoDisponivel={usuario.modulosAtivos.includes("copiloto") && temPermissao(usuario, "admin")}
     >
       {children}
     </AppShell>
