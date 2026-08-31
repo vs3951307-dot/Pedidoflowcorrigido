@@ -126,10 +126,169 @@ export default function MesaPedidoOverlay({
 
   const total = Math.max(0, subtotal - discount + additional);
 
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+
+  const itensVazio = items.length === 0;
+
+  const renderItens = () => (
+    <div className="flex-1 overflow-y-auto px-4 py-4">
+      {itensVazio ? (
+        <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+            <ShoppingBag size={30} className="text-slate-400" />
+          </div>
+
+          <p className="font-bold text-slate-700">Comanda vazia</p>
+
+          <p className="mt-1 max-w-[240px] text-sm leading-5 text-slate-400">
+            Selecione um produto ao lado para adicionar à mesa.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-slate-800">{item.name}</p>
+
+                  {item.description && (
+                    <p className="mt-1 line-clamp-2 text-xs leading-4 text-slate-500">
+                      {item.description}
+                    </p>
+                  )}
+
+                  <p className="mt-2 text-sm font-extrabold text-orange-600">
+                    {money.format(item.unitPrice * item.quantity)}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => onRemove(item.id)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-400">
+                  {money.format(item.unitPrice)} un.
+                </span>
+
+                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
+                  <button
+                    onClick={() => onDecrease(item.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100"
+                  >
+                    <Minus size={16} />
+                  </button>
+
+                  <span className="w-9 text-center text-sm font-black text-slate-800">
+                    {item.quantity}
+                  </span>
+
+                  <button
+                    onClick={() => onIncrease(item.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white transition hover:bg-slate-800"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderValores = () => (
+    <div className="border-t border-slate-200 px-5 py-4">
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500">Subtotal</span>
+          <span className="font-semibold text-slate-700">
+            {money.format(subtotal)}
+          </span>
+        </div>
+
+        {discount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Desconto</span>
+            <span className="font-semibold text-emerald-600">
+              - {money.format(discount)}
+            </span>
+          </div>
+        )}
+
+        {additional > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Acréscimo</span>
+            <span className="font-semibold text-slate-700">
+              + {money.format(additional)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-end justify-between border-t border-dashed border-slate-200 pt-4">
+        <span className="font-bold text-slate-700">Total</span>
+        <span className="text-3xl font-black tracking-tight text-slate-950">
+          {money.format(total)}
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderAcoes = () => (
+    <div className="border-t border-slate-200 bg-slate-50 p-4">
+      <button
+        onClick={onSendKitchen}
+        disabled={!items.length}
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChefHat size={19} />
+        Enviar para cozinha
+      </button>
+
+      <div className="mt-2.5 grid grid-cols-3 gap-2">
+        <button
+          onClick={onSave}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+        >
+          <Save size={17} />
+          Salvar
+        </button>
+
+        <button
+          onClick={onPrint}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+        >
+          <Printer size={17} />
+          Imprimir
+        </button>
+
+        <button
+          onClick={onFinalize}
+          disabled={!items.length}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
+        >
+          <CreditCard size={17} />
+          Finalizar
+        </button>
+      </div>
+    </div>
+  );
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/55 backdrop-blur-[3px] p-2 md:p-5">
+    <>
+      <div className="fixed inset-0 z-[100] bg-slate-950/55 backdrop-blur-[3px] p-2 md:p-5">
       <div className="mx-auto flex h-full max-w-[1750px] overflow-hidden rounded-[24px] border border-slate-200 bg-[#f7f8fa] shadow-2xl">
 
         {/* ========================= */}
@@ -317,169 +476,57 @@ export default function MesaPedidoOverlay({
             </div>
           </div>
 
-          {/* ITENS */}
-
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {items.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-                  <ShoppingBag size={30} className="text-slate-400" />
-                </div>
-
-                <p className="font-bold text-slate-700">
-                  Comanda vazia
-                </p>
-
-                <p className="mt-1 max-w-[240px] text-sm leading-5 text-slate-400">
-                  Selecione um produto ao lado para adicionar à mesa.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-slate-800">
-                          {item.name}
-                        </p>
-
-                        {item.description && (
-                          <p className="mt-1 line-clamp-2 text-xs leading-4 text-slate-500">
-                            {item.description}
-                          </p>
-                        )}
-
-                        <p className="mt-2 text-sm font-extrabold text-orange-600">
-                          {money.format(item.unitPrice * item.quantity)}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => onRemove(item.id)}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">
-                        {money.format(item.unitPrice)} un.
-                      </span>
-
-                      <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
-                        <button
-                          onClick={() => onDecrease(item.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100"
-                        >
-                          <Minus size={16} />
-                        </button>
-
-                        <span className="w-9 text-center text-sm font-black text-slate-800">
-                          {item.quantity}
-                        </span>
-
-                        <button
-                          onClick={() => onIncrease(item.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white transition hover:bg-slate-800"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* VALORES */}
-
-          <div className="border-t border-slate-200 px-5 py-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Subtotal</span>
-                <span className="font-semibold text-slate-700">
-                  {money.format(subtotal)}
-                </span>
-              </div>
-
-              {discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Desconto</span>
-                  <span className="font-semibold text-emerald-600">
-                    - {money.format(discount)}
-                  </span>
-                </div>
-              )}
-
-              {additional > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Acréscimo</span>
-                  <span className="font-semibold text-slate-700">
-                    + {money.format(additional)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 flex items-end justify-between border-t border-dashed border-slate-200 pt-4">
-              <span className="font-bold text-slate-700">
-                Total
-              </span>
-
-              <span className="text-3xl font-black tracking-tight text-slate-950">
-                {money.format(total)}
-              </span>
-            </div>
-          </div>
-
-          {/* AÇÕES */}
-
-          <div className="border-t border-slate-200 bg-slate-50 p-4">
-
-            <button
-              onClick={onSendKitchen}
-              disabled={!items.length}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChefHat size={19} />
-              Enviar para cozinha
-            </button>
-
-            <div className="mt-2.5 grid grid-cols-3 gap-2">
-              <button
-                onClick={onSave}
-                className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-              >
-                <Save size={17} />
-                Salvar
-              </button>
-
-              <button
-                onClick={onPrint}
-                className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-              >
-                <Printer size={17} />
-                Imprimir
-              </button>
-
-              <button
-                onClick={onFinalize}
-                disabled={!items.length}
-                className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
-              >
-                <CreditCard size={17} />
-                Finalizar
-              </button>
-            </div>
-          </div>
+          {renderItens()}
+          {renderValores()}
+          {renderAcoes()}
         </aside>
       </div>
     </div>
+
+    {/* ============================================= */}
+    {/* MOBILE: barra inferior + comanda (drawer)     */}
+    {/* ============================================= */}
+    <aside className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] lg:hidden">
+      {/* Barra de rodapé para abrir a comanda */}
+      <button
+        onClick={() => setShowMobileDrawer(true)}
+        className="pointer-events-auto mx-auto mb-3 flex w-[calc(100%-24px)] max-w-[1750px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-900 px-5 py-4 text-white shadow-2xl"
+      >
+        <span className="text-sm font-bold">
+          {itensVazio ? "Comanda vazia" : `Comanda · ${items.length} item${items.length > 1 ? "ns" : ""}`}
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="text-lg font-black">{money.format(total)}</span>
+          <span className="rounded-lg bg-white/20 px-2.5 py-1 text-xs font-bold">Ver comanda</span>
+        </span>
+      </button>
+
+      {/* Drawer da comanda */}
+      {showMobileDrawer && (
+        <div className="pointer-events-auto fixed inset-0 z-[120] flex flex-col bg-white">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-sm font-black text-white">
+                {table.name.replace(/\D/g, "") || "M"}
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">Atendimento</p>
+                <h2 className="text-base font-bold text-slate-900">{table.name}</h2>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowMobileDrawer(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500"
+            >
+              <X size={19} />
+            </button>
+          </div>
+          {renderItens()}
+          {renderValores()}
+          {renderAcoes()}
+        </div>
+      )}
+    </aside>
+    </>
   );
 }
