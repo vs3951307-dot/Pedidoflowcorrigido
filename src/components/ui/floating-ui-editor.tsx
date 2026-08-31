@@ -121,7 +121,7 @@ export function FloatingUIEditor() {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "fixed bottom-4 right-4 z-[9999] flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-all duration-200",
+          "fixed top-28 right-4 z-[9999] flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-all duration-200",
           "bg-neutral-900 text-amber-400 border border-neutral-700 hover:bg-neutral-800 hover:scale-105",
           open && "bg-amber-400 text-neutral-900"
         )}
@@ -132,7 +132,7 @@ export function FloatingUIEditor() {
 
       {/* Editor panel */}
       {open && (
-        <div className="fixed bottom-18 right-4 z-[9998] w-72 rounded-xl border border-neutral-700 bg-neutral-900/95 backdrop-blur-md shadow-2xl p-4 space-y-4">
+        <div className="fixed top-40 right-4 z-[9998] w-72 rounded-xl border border-neutral-700 bg-neutral-900/95 backdrop-blur-md shadow-2xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-neutral-100">Ajustar Botões</h3>
             <span className="text-[10px] text-neutral-500">Preview ao vivo</span>

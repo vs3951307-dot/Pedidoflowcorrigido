@@ -140,15 +140,26 @@ export function CopilotoFlutuante({
                 <p className="text-xs text-primary-foreground/80">Suporte e consultas em tempo real</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMostrarHistorico((v) => !v)}
-              className="text-primary-foreground hover:bg-white/15 hover:text-white"
-              aria-label="Histórico"
-            >
-              <History className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMostrarHistorico((v) => !v)}
+                className="text-primary-foreground hover:bg-white/15 hover:text-white"
+                aria-label="Histórico"
+              >
+                <History className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAberto(false)}
+                className="text-primary-foreground hover:bg-white/15 hover:text-white"
+                aria-label="Fechar assistente"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex h-[380px] flex-col">
