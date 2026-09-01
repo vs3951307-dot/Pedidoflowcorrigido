@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Bot,
+  Bug,
+  ChevronDown,
+  ChevronUp,
   HandHeart,
   MessageSquare,
   Phone,
@@ -58,12 +61,13 @@ interface PedidoVinculado {
 interface ConversaDetalhe extends ConversaLista {
   mensagens: Mensagem[];
   pedido: PedidoVinculado | null;
+  estado?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
   nova: "Nova",
   em_andamento: "Em andamento",
-  aguardando_confirmacao: "Aguardando confirmação",
+  aguardando_confirmacao: "Aguardando confirmacao",
   pedido_criado: "Pedido criado",
   humana: "Atendimento humano",
   encerrada: "Encerrada",
@@ -77,6 +81,18 @@ const STATUS_COR: Record<string, string> = {
   humana: "bg-blue-100 text-blue-800",
   encerrada: "bg-muted text-muted-foreground",
 };
+
+const QUICK_REPLIES = [
+  { label: "oi", texto: "oi" },
+  { label: "quero pizza", texto: "quero pizza" },
+  { label: "cardapio", texto: "cardapio" },
+  { label: "calabresa", texto: "calabresa" },
+  { label: "grande", texto: "grande" },
+  { label: "sim", texto: "sim" },
+  { label: "pix", texto: "pix" },
+  { label: "entrega", texto: "entrega" },
+  { label: "cancelar", texto: "cancelar" },
+];
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -93,7 +109,6 @@ function formatarTelefone(tel: string): string {
 function Bolha({ mensagem }: { mensagem: Mensagem }) {
   const ehCliente = mensagem.de === "cliente";
   const ehHumano = mensagem.de === "humano";
-  const ehSistema = mensagem.de === "sistema";
 
   const estilo = ehCliente
     ? "self-end bg-primary text-primary-foreground"
@@ -101,18 +116,14 @@ function Bolha({ mensagem }: { mensagem: Mensagem }) {
       ? "self-end bg-emerald-100 text-emerald-950"
       : "self-start bg-muted text-foreground";
 
-  const rotulo = ehCliente
-    ? "Cliente"
-    : ehHumano
-      ? "Atendente humano"
-      : "Robô";
+  const rotulo = ehCliente ? "Cliente" : ehHumano ? "Atendente humano" : "Robo";
   const Icone = ehCliente ? UserRound : ehHumano ? UserRoundCog : Bot;
 
   return (
     <div className={`flex max-w-[85%] flex-col gap-1 rounded-2xl px-3 py-2 text-sm ${estilo}`}>
       <span className={`flex items-center gap-1 text-[11px] font-medium ${ehCliente || ehHumano ? "opacity-70" : "text-muted-foreground"}`}>
         <Icone className="h-3 w-3" aria-hidden="true" />
-        {rotulo} · {formatarData(mensagem.criadoEm)}
+        {rotulo} - {formatarData(mensagem.criadoEm)}
       </span>
       <span className="whitespace-pre-wrap break-words">{mensagem.texto}</span>
     </div>
@@ -120,9 +131,9 @@ function Bolha({ mensagem }: { mensagem: Mensagem }) {
 }
 
 /**
- * Atendimento — conversas do WhatsApp (PEDIDO 18). Robô conduz o fluxo
- * com dados reais do banco; atendente pode assumir (humano), responder,
- * devolver ao robô ou encerrar. Simulador permite testar sem WhatsApp real.
+ * Atendimento - conversas do WhatsApp. Robo conduz o fluxo com dados
+ * reais do banco; atendente pode assumir (humano), responder, devolver
+ * ao robo ou encerrar. Simulador permite testar sem WhatsApp real.
  */
 export default function AtendimentoPage() {
   const { dados, recarregar } = useApi<{ conversas: ConversaLista[] }>(
@@ -137,6 +148,26 @@ export default function AtendimentoPage() {
   const [textoHumano, setTextoHumano] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [operando, setOperando] = useState(false);
+  const [debugAberto, setDebugAberto] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll para ultima mensagem
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [detalhe?.mensagens]);
+
+  // Auto-polling: atualiza a conversa aberta a cada 3s
+  useEffect(() => {
+    if (!conversaId) return;
+    const timer = setInterval(() => {
+      api<{ conversa: ConversaDetalhe }>(`/api/atendimento/conversas/${conversaId}`)
+        .then(({ conversa }) => setDetalhe(conversa))
+        .catch(() => undefined);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [conversaId]);
 
   const selecionar = useCallback(async (id: string) => {
     setConversaId(id);
@@ -148,16 +179,8 @@ export default function AtendimentoPage() {
     }
   }, []);
 
-  // Atualiza a conversa aberta quando a lista muda (nova mensagem no robô).
-  useEffect(() => {
-    if (!conversaId) return;
-    api<{ conversa: ConversaDetalhe }>(`/api/atendimento/conversas/${conversaId}`)
-      .then(({ conversa }) => setDetalhe(conversa))
-      .catch(() => undefined);
-  }, [conversaId, dados]);
-
-  const enviarSimulacao = async () => {
-    const texto = textoSim.trim();
+  const enviarSimulacao = async (textoOverride?: string) => {
+    const texto = (textoOverride ?? textoSim).trim();
     if (!texto) return;
     setEnviando(true);
     try {
@@ -166,7 +189,7 @@ export default function AtendimentoPage() {
         body: JSON.stringify({ telefone: telefoneSim.trim(), texto, origem: "simulacao" }),
       });
       setTextoSim("");
-      toast.success("Mensagem enviada ao robô.");
+      toast.success("Mensagem enviada ao robo.");
       recarregar();
       await selecionar(r.conversaId);
     } catch (e) {
@@ -188,7 +211,7 @@ export default function AtendimentoPage() {
       toast.success(sucesso);
       recarregar();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha na operação");
+      toast.error(e instanceof Error ? e.message : "Falha na operacao");
     } finally {
       setOperando(false);
     }
@@ -222,11 +245,21 @@ export default function AtendimentoPage() {
     [dados.conversas, conversaId, detalhe]
   );
 
+  // Parse estado para debug
+  const estadoDebug = useMemo(() => {
+    if (!detalhe?.estado) return null;
+    try {
+      return JSON.parse(detalhe.estado);
+    } catch {
+      return null;
+    }
+  }, [detalhe?.estado]);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Atendimento WhatsApp"
-        description="Robô conduz o pedido com dados reais; o atendente acompanha e pode assumir a conversa."
+        description="Robo conduz o pedido com dados reais; o atendente acompanha e pode assumir a conversa."
         actions={
           <Button variant="outline" onClick={recarregar}>
             <RotateCw className="h-4 w-4" aria-hidden="true" />
@@ -247,7 +280,7 @@ export default function AtendimentoPage() {
             <CardContent className="flex max-h-[520px] flex-col gap-2 overflow-y-auto p-5 pt-3">
               {dados.conversas.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma conversa ainda. Use o simulador ao lado para começar.
+                  Nenhuma conversa ainda. Use o simulador abaixo para comecar.
                 </p>
               )}
               {dados.conversas.map((c) => (
@@ -309,22 +342,59 @@ export default function AtendimentoPage() {
                   aria-label="Telefone do cliente simulado"
                 />
               </div>
+
+              {/* Historico recente no simulador */}
+              {detalhe && detalhe.mensagens.length > 0 && (
+                <div className="flex flex-col gap-1 rounded-lg bg-muted/50 p-2 text-xs">
+                  <span className="font-medium text-muted-foreground">Historico:</span>
+                  {detalhe.mensagens.slice(-4).map((m) => (
+                    <span key={m.id} className="truncate">
+                      <span className="font-medium">{m.de === "cliente" ? "Voce" : "Bot"}:</span>{" "}
+                      {m.texto.slice(0, 80)}{m.texto.length > 80 ? "..." : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-medium text-muted-foreground">Mensagem do cliente</Label>
                 <Textarea
                   value={textoSim}
                   onChange={(e) => setTextoSim(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      enviarSimulacao();
+                    }
+                  }}
                   placeholder="Ex.: quero uma pizza de calabresa"
                   rows={3}
                   aria-label="Mensagem do cliente simulado"
                 />
               </div>
-              <Button onClick={enviarSimulacao} disabled={enviando || !textoSim.trim()}>
+
+              {/* Respostas rapidas */}
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_REPLIES.map((qr) => (
+                  <Button
+                    key={qr.label}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={enviando}
+                    onClick={() => enviarSimulacao(qr.texto)}
+                  >
+                    {qr.label}
+                  </Button>
+                ))}
+              </div>
+
+              <Button onClick={() => enviarSimulacao()} disabled={enviando || !textoSim.trim()}>
                 <Send className="h-4 w-4" aria-hidden="true" />
-                Enviar para o robô
+                Enviar para o robo
               </Button>
               <p className="text-xs text-muted-foreground">
-                Testa o fluxo completo sem WhatsApp real. A conversa aparece na lista.
+                Use os botoes rapidos ou digite. Enter envia. A conversa aparece na lista.
               </p>
             </CardContent>
           </Card>
@@ -340,11 +410,11 @@ export default function AtendimentoPage() {
                     {conversaAtual.atendimentoHumano ? (
                       <Badge className="bg-blue-100 font-medium text-blue-800">Humano</Badge>
                     ) : (
-                      <Badge className="bg-muted font-medium text-muted-foreground">Robô</Badge>
+                      <Badge className="bg-muted font-medium text-muted-foreground">Robo</Badge>
                     )}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    {formatarTelefone(conversaAtual.telefone)} · etapa {conversaAtual.etapa} · atualizada em{" "}
+                    {formatarTelefone(conversaAtual.telefone)} - etapa {conversaAtual.etapa} - atualizada em{" "}
                     {formatarData(conversaAtual.atualizadoEm)}
                   </p>
                 </div>
@@ -354,7 +424,7 @@ export default function AtendimentoPage() {
                       variant="outline"
                       size="sm"
                       disabled={operando}
-                      onClick={() => operar({ humana: true }, "Você assumiu o atendimento.")}
+                      onClick={() => operar({ humana: true }, "Voce assumiu o atendimento.")}
                     >
                       <HandHeart className="h-4 w-4" aria-hidden="true" />
                       Assumir
@@ -365,10 +435,10 @@ export default function AtendimentoPage() {
                       variant="outline"
                       size="sm"
                       disabled={operando}
-                      onClick={() => operar({ humana: false }, "Devolvido ao robô.")}
+                      onClick={() => operar({ humana: false }, "Devolvido ao robo.")}
                     >
                       <Bot className="h-4 w-4" aria-hidden="true" />
-                      Devolver ao robô
+                      Devolver ao robo
                     </Button>
                   )}
                   {conversaAtual.status !== "encerrada" && (
@@ -391,11 +461,15 @@ export default function AtendimentoPage() {
           <CardContent className="flex flex-col gap-4 p-6 pt-2">
             {!conversaAtual ? (
               <p className="py-16 text-center text-sm text-muted-foreground">
-                Selecione uma conversa para acompanhar, responder ou usar o simulador.
+                Selecione uma conversa para acompanhar ou use o simulador.
               </p>
             ) : (
               <>
-                <div className="flex max-h-[420px] min-h-[260px] flex-col gap-2 overflow-y-auto rounded-xl bg-muted/30 p-4">
+                {/* Chat com auto-scroll */}
+                <div
+                  ref={chatRef}
+                  className="flex max-h-[420px] min-h-[260px] flex-col gap-2 overflow-y-auto rounded-xl bg-muted/30 p-4"
+                >
                   {detalhe?.mensagens.length === 0 && (
                     <p className="m-auto text-sm text-muted-foreground">Sem mensagens ainda.</p>
                   )}
@@ -405,12 +479,13 @@ export default function AtendimentoPage() {
                 {detalhe?.pedido && (
                   <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                     <Wallet className="h-4 w-4" aria-hidden="true" />
-                    Pedido #{detalhe.pedido.numero} ({detalhe.pedido.canal}) — R${" "}
-                    {detalhe.pedido.total.toFixed(2).replace(".", ",")} ·{" "}
+                    Pedido #{detalhe.pedido.numero} ({detalhe.pedido.canal}) - R${" "}
+                    {detalhe.pedido.total.toFixed(2).replace(".", ",")} -{" "}
                     <span className="font-medium">{detalhe.pedido.status}</span>
                   </div>
                 )}
 
+                {/* Responder como humano */}
                 <div className="flex flex-col gap-2">
                   <Label className="text-sm font-medium text-muted-foreground">
                     Responder como atendente humano
@@ -435,8 +510,79 @@ export default function AtendimentoPage() {
                   </div>
                   {conversaAtual.origem === "whatsapp" && (
                     <p className="text-xs text-muted-foreground">
-                      A resposta será enviada pelo WhatsApp oficial se configurado (ver .env).
+                      A resposta sera enviada pelo WhatsApp oficial se configurado.
                     </p>
+                  )}
+                </div>
+
+                {/* Painel de Debug */}
+                <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50/50">
+                  <button
+                    type="button"
+                    onClick={() => setDebugAberto(!debugAberto)}
+                    className="flex w-full items-center justify-between p-3 text-sm font-medium text-amber-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bug className="h-4 w-4" aria-hidden="true" />
+                      Debug - FSM
+                    </span>
+                    {debugAberto ? (
+                      <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                  {debugAberto && (
+                    <div className="space-y-2 border-t border-amber-200 px-3 pb-3 pt-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Etapa:</span>
+                        <Badge className="bg-amber-100 font-mono text-amber-800">{conversaAtual.etapa}</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Status:</span>
+                        <Badge className={`${STATUS_COR[conversaAtual.status] ?? "bg-muted"} font-mono`}>
+                          {conversaAtual.status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Origem:</span>
+                        <span className="font-mono">{conversaAtual.origem}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Humano:</span>
+                        <span className="font-mono">{conversaAtual.atendimentoHumano ? "sim" : "nao"}</span>
+                      </div>
+                      {estadoDebug && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Carrinho:</span>
+                            <span className="font-mono">
+                              {Array.isArray(estadoDebug.itens) ? estadoDebug.itens.length : 0} itens
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Canal:</span>
+                            <span className="font-mono">{estadoDebug.canal ?? "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Endereco:</span>
+                            <span className="font-mono">
+                              {estadoDebug.endereco
+                                ? `${estadoDebug.endereco.rua}, ${estadoDebug.endereco.bairro}`
+                                : "—"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Pagamento:</span>
+                            <span className="font-mono">{estadoDebug.formaPagamento ?? "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cliente:</span>
+                            <span className="font-mono">{estadoDebug.cliente?.nome ?? "—"}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               </>
