@@ -123,7 +123,10 @@ export function montarSaudacao(
     return `${cliente} O que você deseja hoje?`;
   }
   const lojaFinal = loja?.trim() || "nossa loja";
-  return `${cliente} Eu sou a ${nome}, atendente da ${lojaFinal}! 🍕💜 Como posso ajudar você hoje?`;
+  const saudacao = `${cliente} Eu sou a ${nome}, atendente da ${lojaFinal}! 🍕💜 Como posso ajudar você hoje?`;
+  // Sanitização: garante que a saudação começa com "Olá" — remove qualquer
+  // texto que a IA beautifier possa ter adicionado antes (ex.: "Aqui é a").
+  return saudacao.replace(/^[^Oo]*Olá/, "Olá");
 }
 
 /** Saudação única usada quando uma conversa realmente começa. */
