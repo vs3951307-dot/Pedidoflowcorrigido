@@ -1477,6 +1477,7 @@ export async function receberMensagemWhatsApp(
     // o texto exato desejado e não pode ser reescrito/inflado pelo modelo
     // (que tendia a repetir o cumprimento a cada resposta).
     const primeiraMensagem = conversa.status === "nova";
+    const respostaBaseOriginal = resposta.texto;
     if (
       !primeiraMensagem &&
       iaDisponivel() &&
@@ -1519,6 +1520,22 @@ export async function receberMensagemWhatsApp(
         primeiraMensagem: conversa.status === "nova",
       });
       if (textoBonito) resposta.texto = textoBonito;
+    }
+
+    // PROTEÇÃO EXTRA (anti-regressão): mesmo que o deploy antigo esteja
+    // rodando (sem o guard primeiraMensagem), a IA beautifier não deve
+    // alterar a saudação inicial. Se a respostaBase (motor) começa com
+    // "Olá" e a resposta beautificada é MAIS LONGA que a original (a IA
+    // inflou/adicionou texto), restaura o texto original do motor.
+    if (resposta.texto && resposta.texto !== respostaBaseOriginal) {
+      const motorInicio = respostaBaseOriginal.slice(0, 4).toLowerCase();
+      if (motorInicio === "olá!" || motorInicio === "ola!") {
+        // Se a resposta da IA é >10% mais longa que a do motor,
+        // a IA inflou o texto (adicionou cumprimento/extra).
+        if (resposta.texto.length > respostaBaseOriginal.length * 1.1) {
+          resposta.texto = respostaBaseOriginal;
+        }
+      }
     }
   }
 
