@@ -36,17 +36,9 @@ interface ConfiguracoesApi {
 }
 
 function previewSaudacao(persona: PersonaAtendente): string {
-  const apresentacao = persona.nome.trim() ? `Aqui é a ${persona.nome.trim()}.` : null;
-  switch (persona.tom) {
-    case "formal":
-      return `Olá! ${apresentacao ?? "Bem-vindo(a) à nossa pizzaria."} Em que posso ajudar?`;
-    case "profissional":
-      return `Olá! ${apresentacao ?? "Somos a nossa pizzaria."} Como posso ajudar?`;
-    case "descontraido":
-      return `Olá! 👋 ${apresentacao ?? "Bora pedir algo?"}`;
-    default:
-      return `Olá! 😊 ${apresentacao ?? "O que você deseja?"}`;
-  }
+  const nome = persona.nome.trim();
+  if (!nome) return "Olá! 😊 O que você deseja hoje?";
+  return `Olá! 😊 Eu sou a ${nome}, atendente da nossa loja! 🍕💜 Como posso ajudar você hoje?`;
 }
 
 /**

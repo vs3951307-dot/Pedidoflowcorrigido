@@ -847,17 +847,8 @@ interface PersonaData {
 
 function previewSaudacaoAtendente(p: PersonaData): string {
   const nome = (p.nome ?? "").trim();
-  const apresentacao = nome ? `Aqui é a ${nome}.` : null;
-  switch (p.tom) {
-    case "formal":
-      return `Olá! ${apresentacao ?? "Bem-vindo(a) à nossa pizzaria."} Em que posso ajudar?`;
-    case "profissional":
-      return `Olá! ${apresentacao ?? "Somos a nossa pizzaria."} Como posso ajudar?`;
-    case "descontraido":
-      return `Olá! 👋 ${apresentacao ?? "Bora pedir algo?"}`;
-    default:
-      return `Olá! 😊 ${apresentacao ?? "O que você deseja?"}`;
-  }
+  if (!nome) return "Olá! 😊 O que você deseja hoje?";
+  return `Olá! 😊 Eu sou a ${nome}, atendente da nossa loja! 🍕💜 Como posso ajudar você hoje?`;
 }
 
 function previewSaudacaoCopiloto(p: PersonaData, empresaNome: string): string {
