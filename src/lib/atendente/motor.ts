@@ -213,6 +213,28 @@ function bairroDaEntrega(texto: string): string | null {
   return candidato.length >= 3 ? candidato : null;
 }
 
+/** Detecta pergunta sobre preço de um produto específico ("quanto custa a calabresa?", "preço da grande"). */
+function querPrecoEspecifico(texto: string): boolean {
+  return /(quanto custa|qual (o )?pre[cç]o|quanto [eé]|pre[cç]o d[oae]|valor d[oae]|custa|custo)/i.test(texto);
+}
+
+/** Detecta pergunta sobre disponibilidade de um produto específico ("tem frango?", "vocês têm calabresa?"). */
+function querDisponibilidadeEspecifica(texto: string): boolean {
+  return /(tem\b|voc[eê]s t[eê]m|t[eê]m\b|existe|tem dispon[ií]vel|tem essa|tem esse)/i.test(texto);
+}
+
+/** Extrai o termo de busca de produto de uma pergunta de preço/disponibilidade, removendo palavras de pergunta/preço. */
+function extrairProdutoDePergunta(texto: string): string {
+  return texto
+    .replace(
+      /(quanto custa|qual (o )?pre[cç]o|quanto [eé]|pre[cç]o d[oae]|valor d[oae]|custa|custo|tem\b|voc[eê]s t[eê]m|t[eê]m\b|existe|tem dispon[ií]vel|tem essa|tem esse|voc[eê]s|pra?|no |na |o |a |de |da |do |um |uma |s[óo]|por favor|porfavor)/gi,
+      " "
+    )
+    .replace(/[?!,.;:]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Texto de saudação única, com persona da atendente e nome da loja (banco). */
 async function saudacaoComPersona(persona: PersonaAtendente, nomeCliente: string | null, empresaId: string): Promise<string> {
   const loja = await nomeFantasia(empresaId);
@@ -267,6 +289,69 @@ async function responderSobreEntrega(empresaId: string, texto: string): Promise<
   return {
     etapa: "intencao",
     texto: "Sim, fazemos entrega! 🛵 A taxa é calculada pelo bairro. Pode me dizer o *bairro* da entrega? (assim confirmo se atendemos e a taxa)",
+  };
+}
+
+/**
+ * Busca um produto específico e responde com seu preço (e opções de tamanho, se houver).
+ * Usado quando o cliente pergunta "quanto custa a calabresa?", "preço da grande" etc.
+ * NUNCA inventa preço — tudo vem do banco.
+ */
+async function buscarEResponderPreco(empresaId: string, texto: string): Promise<PassoResultado | null> {
+  const termo = extrairProdutoDePergunta(texto);
+  if (termo.length < 2) return null;
+  const achados = await buscarProdutos(empresaId, termo, 5);
+  if (achados.length === 0) return null;
+  if (achados.length === 1) {
+    const p = achados[0];
+    const linhas = [`*${p.nome}* — a partir de *${brl(p.precoBase)}*`];
+    if (p.tamanhos.length > 1) {
+      linhas.push("Opções de tamanho:");
+      for (const t of p.tamanhos) {
+        linhas.push(`  • ${t.nome} — ${brl(t.valor)}`);
+      }
+    }
+    if (p.sabores.length > 0) {
+      linhas.push(`Sabores: ${p.sabores.map((s) => s.nome).join(", ")}`);
+    }
+    linhas.push("\nQuer pedir? É só me dizer o tamanho (se tiver) e os sabores. 😊");
+    return { etapa: "intencao", texto: linhas.join("\n") };
+  }
+  // Múltiplos resultados → lista resumida com preço
+  return {
+    etapa: "intencao",
+    texto: `Encontrei ${achados.length} itens. Qual deles você quer saber o preço?\n${listar(
+      achados.map((p) => ({ nome: p.nome, detalhe: `a partir de ${brl(p.precoBase)}` }))
+    )}\n*(responda com o número)*`,
+  };
+}
+
+/**
+ * Busca um produto específico e responde se está disponível no cardápio.
+ * Usado quando o cliente pergunta "tem frango?", "vocês têm calabresa?" etc.
+ */
+async function buscarEResponderDisponibilidade(empresaId: string, texto: string): Promise<PassoResultado | null> {
+  const termo = extrairProdutoDePergunta(texto);
+  if (termo.length < 2) return null;
+  const achados = await buscarProdutos(empresaId, termo, 5);
+  if (achados.length === 0) {
+    return {
+      etapa: "intencao",
+      texto: `Não encontrei "${termo}" no cardápio. 🤔 Quer ver o *cardápio* completo? Ou me diga o nome de outro item.`,
+    };
+  }
+  if (achados.length === 1) {
+    const p = achados[0];
+    return {
+      etapa: "intencao",
+      texto: `Sim, temos *${p.nome}*! ${p.emoji} A partir de *${brl(p.precoBase)}*.\nQuer pedir? 😊`,
+    };
+  }
+  return {
+    etapa: "intencao",
+    texto: `Encontrei ${achados.length} itens relacionados:\n${listar(
+      achados.map((p) => ({ nome: p.nome, detalhe: `${p.emoji} ${brl(p.precoBase)}` }))
+    )}\nQual deles você quer? 😊`,
   };
 }
 
@@ -343,6 +428,21 @@ async function passoAtendimento(
       }
       if (querHumano(texto)) {
         return { etapa: "humana", texto: "Sem problemas! Vou transferir você para um atendente humano, um instante. 🙋" };
+      }
+      // Pergunta sobre preço de produto específico ("quanto custa a calabresa?", "preço da grande")
+      // → busca o produto e responde com o preço real, sem jogar o cardápio inteiro.
+      if (querPrecoEspecifico(texto)) {
+        estado.tentativas = 0;
+        const respostaPreco = await buscarEResponderPreco(estado.empresaId, texto);
+        if (respostaPreco) return respostaPreco;
+        // Se não achou produto específico, cai no cardápio completo
+      }
+      // Pergunta sobre disponibilidade ("tem frango?", "vocês têm calabresa?")
+      // → busca o produto e responde se existe, sem jogar o cardápio inteiro.
+      if (querDisponibilidadeEspecifica(texto)) {
+        estado.tentativas = 0;
+        const respostaDisp = await buscarEResponderDisponibilidade(estado.empresaId, texto);
+        if (respostaDisp) return respostaDisp;
       }
       if (querCardapio(texto)) {
         estado.tentativas = 0;
