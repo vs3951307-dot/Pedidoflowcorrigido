@@ -105,6 +105,21 @@ async function listarCardapio(ctx: ContextoTool): Promise<ResultadoTool> {
 /** Busca produto por termo (parcial ou exato). */
 async function buscarProduto(ctx: ContextoTool, termo: string): Promise<ResultadoTool> {
   if (!termo || termo.length < 2) return erro("Preciso de pelo menos 2 letras para buscar.");
+
+  // Defesa técnica: palavras genéricas NÃO são nomes de produto.
+  // Mesmo que o LLM erre e chame buscar_produto("pizza"), a tool redireciona.
+  const PALAVRAS_GENERICAS = new Set([
+    "pizza", "pizzas", "pedido", "quero pedir", "quero", "cardápio",
+    "cardapio", "comida", "lanche", "lanches", "promoção", "promocao",
+    "delivery", "retirada", "pedido", "fazer pedido", "ver cardapio",
+  ]);
+  const termoLimpo = termo.toLowerCase().trim();
+  if (PALAVRAS_GENERICAS.has(termoLimpo)) {
+    return ok(
+      "Claro! Vamos fazer seu pedido. Você quer ver o cardápio ou já sabe qual pizza deseja?"
+    );
+  }
+
   const achados = await buscarProdutos(ctx.empresaId, termo, 5);
   if (achados.length === 0) return ok(`Não encontrei "${termo}" no cardápio. 🤔`);
   if (achados.length === 1) {
