@@ -12,7 +12,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "deploy:migrar": "prisma migrate resolve --rolled-back 20260825190000_sabor_fotoUrl || true && prisma migrate deploy && tsx scripts/sincronizar-schemas-tenants.ts && tsx scripts/backfill-etapa1.ts && tsx scripts/setup-config-pizza.ts",
+    "deploy:migrar": "tsx scripts/resolve-failed-migrations.ts && prisma migrate deploy && tsx scripts/sincronizar-schemas-tenants.ts && tsx scripts/backfill-etapa1.ts && tsx scripts/setup-config-pizza.ts",
     "db:seed": "node scripts/guarda-destrutiva.cjs \"prisma db seed\"",
     "db:reset": "node scripts/guarda-destrutiva.cjs \"prisma migrate reset --force\"",
     "db:migrar-postgres": "tsx scripts/migrar-sqlite-para-postgres.ts",
