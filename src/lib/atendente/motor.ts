@@ -109,6 +109,8 @@ interface Estado {
    */
   chaveIdempotencia?: string;
   tentativas: number;
+  /** ID do pedido criado (usado para consultar status). */
+  pedidoId?: string;
 }
 
 export interface RespostaAtendente {
@@ -200,6 +202,31 @@ function querEntrega(texto: string): boolean {
   return /(entregam|voc[eê]s entregam|entrega em|entregam em|chega a[ií]|d[aá] pra entregar|d[aá] para entregar|faz entrega|fazem entrega|taxa de entrega|taxa da entrega|quanto [eé] a entrega|quanto custa a entrega|bairro|taxa)/i.test(
     texto
   );
+}
+
+/** Cliente quer ver o total do carrinho ("quanto tá?", "quanto vai?", "total", "quanto deu?"). */
+function querVerTotal(texto: string): boolean {
+  return /^(quanto t[aá]|quanto vai|quanto deu|total|valor total|quanto fica|quanto vai ser|quanto fica o pedido|quanto vai ficar)\b/i.test(texto.trim());
+}
+
+/** Cliente quer tirar um item do carrinho ("tira a pizza", "remove o refrigerante"). */
+function querTirarItem(texto: string): boolean {
+  return /\b(tira|remov|tirar|remover|apaga|apagar|exclu|excluir|cancela|cancelar|sobra|tirar o|tirar a|tirar um|tirar uma)\b/i.test(texto);
+}
+
+/** Cliente quer trocar um item por outro ("troca a calabresa pela mussarela"). */
+function querTrocarItem(texto: string): boolean {
+  return /\b(troca|trocar|troco|troco o|troco a|muda|mudar|substitui|substituir|coloca em vez|em vez de)\b/i.test(texto);
+}
+
+/** Cliente quer ver o status do pedido ("onde tá meu pedido?", "e meu pedido?"). */
+function querStatusPedido(texto: string): boolean {
+  return /(onde t[aá] (o |meu )?pedido|e (o |meu )?pedido|status do pedido|situa[cç][aã]o do pedido|j[aá] saiu|j[aá] est[aá] pronto|quando chega|tempo estimado|previs[aã]o|andamento do pedido|meu pedido)/i.test(texto);
+}
+
+/** Cliente quer repetir o pedido anterior ("igual da última vez", "mesmo de antes"). */
+function querRepetirPedido(texto: string): boolean {
+  return /(igual (da |de )?[uú]ltima vez|mesmo (de |da )?antes|mesmo pedido|como da [uú]ltima vez|repete (o |meu )?pedido|faz igual|pedir igual|da mesma forma|último pedido|pedido anterior|como antes)/i.test(texto);
 }
 
 /** Extrai um nome de bairro de uma pergunta de entrega, quando presente. */
@@ -429,6 +456,141 @@ async function passoAtendimento(
       if (querHumano(texto)) {
         return { etapa: "humana", texto: "Sem problemas! Vou transferir você para um atendente humano, um instante. 🙋" };
       }
+      // "Quanto tá?" / "total" — mostra o carrinho atual com subtotal.
+      if (querVerTotal(texto) && (estado.itens.length > 0 || estado.atual)) {
+        estado.tentativas = 0;
+        const subtotal = estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0);
+        if (estado.itens.length === 0) {
+          return { etapa: "intencao", texto: "Seu carrinho ainda está vazio. Quer pedir alguma coisa? 🛒" };
+        }
+        const linhas = estado.itens.map((i) => `• ${i.quantidade}× ${i.nome}${i.tamanho ? ` (${i.tamanho})` : ""} — ${brl(i.precoUnit * i.quantidade)}`);
+        const taxaInfo = estado.taxa ? `\nTaxa de entrega: ${brl(estado.taxa)}` : "";
+        const total = estado.canal === "entrega" ? subtotal + (estado.taxa ?? 0) : subtotal;
+        return {
+          etapa: "mais_itens",
+          texto: `🛒 *Seu carrinho:*\n${linhas.join("\n")}${taxaInfo}\n\n*Subtotal: ${brl(subtotal)}*${estado.canal === "entrega" ? `\n*Total (com entrega): ${brl(total)}*` : ""}\n\nQuer mais alguma coisa? *(sim / não)*`,
+        };
+      }
+      // "Tira o X" — remove item do carrinho.
+      if (querTirarItem(texto) && estado.itens.length > 0) {
+        estado.tentativas = 0;
+        const termo = limparBusca(texto.replace(/\b(tira|remov|tirar|remover|apaga|apagar|exclu|excluir|cancela|cancelar)\b/gi, ""));
+        const idxEncontrado = estado.itens.findIndex((i) =>
+          i.nome.toLowerCase().includes(termo.toLowerCase()) ||
+          termo.toLowerCase().includes(i.nome.toLowerCase())
+        );
+        if (idxEncontrado >= 0) {
+          const removido = estado.itens.splice(idxEncontrado, 1)[0];
+          if (estado.itens.length === 0) {
+            return {
+              etapa: "intencao",
+              texto: `Tirei o *${removido.nome}* do carrinho. 🗑️ Seu carrinho ficou vazio. Quer pedir mais alguma coisa?`,
+            };
+          }
+          const subtotal = estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0);
+          const linhas = estado.itens.map((i) => `• ${i.quantidade}× ${i.nome}${i.tamanho ? ` (${i.tamanho})` : ""} — ${brl(i.precoUnit * i.quantidade)}`);
+          return {
+            etapa: "mais_itens",
+            texto: `Tirei o *${removido.nome}*. 🗑️\n\n🛒 *Carrinho atualizado:*\n${linhas.join("\n")}\n\n*Subtotal: ${brl(subtotal)}*\n\nQuer mais alguma coisa? *(sim / não)*`,
+          };
+        }
+        return {
+          etapa: "mais_itens",
+          texto: `Não encontrei "${termo}" no carrinho. Itens atuais:\n${listar(estado.itens.map((i) => ({ nome: `${i.quantidade}× ${i.nome}` })))}`,
+        };
+      }
+      // "Troca X pelo Y" — troca item no carrinho.
+      if (querTrocarItem(texto) && estado.itens.length > 0) {
+        estado.tentativas = 0;
+        const termoLimpo = limparBusca(texto.replace(/\b(troca|trocar|troco|muda|mudar|substitui|substituir|coloca em vez|em vez de)\b/gi, ""));
+        const partes = termoLimpo.split(/\s*(?:pelo|pela|por|pra|pro|by|para|no lugar|em vez)\s+/i);
+        if (partes.length >= 2) {
+          const termoAntigo = partes[0].trim();
+          const termoNovo = partes.slice(1).join(" ").trim();
+          const idxEncontrado = estado.itens.findIndex((i) =>
+            i.nome.toLowerCase().includes(termoAntigo.toLowerCase()) ||
+            termoAntigo.toLowerCase().includes(i.nome.toLowerCase())
+          );
+          if (idxEncontrado >= 0) {
+            const achados = await buscarProdutos(estado.empresaId, termoNovo, 3);
+            if (achados.length === 1) {
+              const antigo = estado.itens[idxEncontrado];
+              const novo = achados[0];
+              const novoProduto = await prisma.produto.findFirst({
+                where: { id: novo.id, empresaId: estado.empresaId },
+                include: { precos: { include: { tamanho: true } } },
+              });
+              if (novoProduto) {
+                const novoPreco = novoProduto.precos.length > 0 ? novoProduto.precos[0].valor : novoProduto.preco;
+                estado.itens[idxEncontrado] = {
+                  ...antigo,
+                  produtoId: novoProduto.id,
+                  nome: novoProduto.nome,
+                  precoUnit: novoPreco,
+                };
+                const subtotal = estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0);
+                return {
+                  etapa: "mais_itens",
+                  texto: `Troquei *${antigo.nome}* por *${novoProduto.nome}*. ✅\n*Subtotal: ${brl(subtotal)}*\n\nQuer mais alguma coisa? *(sim / não)*`,
+                };
+              }
+            }
+            if (achados.length > 1) {
+              return {
+                etapa: "troca_selecao",
+                texto: `Encontrei ${achados.length} opções para "${termoNovo}". Qual?\n${listar(achados.map((p) => ({ nome: p.nome, detalhe: brl(p.precoBase) })))}\n*(responda com o número)*`,
+              };
+            }
+          }
+          return {
+            etapa: "mais_itens",
+            texto: `Não encontrei "${termoAntigo}" no carrinho ou "${termoNovo}" no cardápio. 🤔`,
+          };
+        }
+        return {
+          etapa: "mais_itens",
+          texto: "Como quer trocar? Ex.: *troca a calabresa pela mussarela*",
+        };
+      }
+      // "Igual da última vez" — repete pedido anterior.
+      if (querRepetirPedido(texto)) {
+        estado.tentativas = 0;
+        const ultimoPedido = await prisma.pedido.findFirst({
+          where: { empresaId: estado.empresaId, clienteTelefone: estado.cliente?.telefone ?? "", status: { not: "cancelado" } },
+          orderBy: { criadoEm: "desc" },
+          include: { itens: true },
+        });
+        if (ultimoPedido && ultimoPedido.itens.length > 0) {
+          estado.itens = [];
+          for (const item of ultimoPedido.itens) {
+            const produto = await prisma.produto.findFirst({
+              where: { id: item.produtoId, empresaId: estado.empresaId },
+            });
+            if (produto && produto.ativo) {
+              estado.itens.push({
+                produtoId: item.produtoId,
+                nome: item.nome,
+                precoUnit: item.precoUnit,
+                quantidade: item.quantidade,
+                tamanho: item.tamanho,
+                sabores: (() => { try { return item.sabores ? JSON.parse(item.sabores) : []; } catch { return []; } })(),
+                adicionais: (() => { try { return item.adicionais ? JSON.parse(item.adicionais) : []; } catch { return []; } })(),
+              });
+            }
+          }
+          if (estado.itens.length > 0) {
+            if (!estado.chaveIdempotencia) estado.chaveIdempotencia = novaChaveIdempotencia();
+            return {
+              etapa: "mais_itens",
+              texto: `Peguei seu último pedido! 🔄\n\n${listar(estado.itens.map((i) => ({ nome: `${i.quantidade}× ${i.nome}${i.tamanho ? ` (${i.tamanho})` : ""}`, detalhe: brl(i.precoUnit * i.quantidade) })))}\n\n*Subtotal: ${brl(estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0))}*\n\nQuer mais alguma coisa ou fechamos assim? *(sim / não)*`,
+            };
+          }
+        }
+        return {
+          etapa: "intencao",
+          texto: "Não encontrei pedidos anteriores no seu cadastro. 🤔 Quer ver o *cardápio* e montar um novo pedido?",
+        };
+      }
       // Pergunta sobre preço de produto específico ("quanto custa a calabresa?", "preço da grande")
       // → busca o produto e responde com o preço real, sem jogar o cardápio inteiro.
       if (querPrecoEspecifico(texto)) {
@@ -482,6 +644,32 @@ async function passoAtendimento(
         return {
           etapa: "intencao",
           texto: "O que você gostaria de pedir hoje? 😊 (pode ser *pizza*, *lanche* ou *bebida* — ou ver o *cardápio*)",
+        };
+      }
+      // Status do pedido — cliente pergunta sobre pedido existente.
+      if (querStatusPedido(texto)) {
+        estado.tentativas = 0;
+        const ultimoPedido = await prisma.pedido.findFirst({
+          where: { empresaId: estado.empresaId, clienteTelefone: estado.cliente?.telefone ?? "", status: { not: "cancelado" } },
+          orderBy: { criadoEm: "desc" },
+          select: { numero: true, status: true, criadoEm: true },
+        });
+        if (ultimoPedido) {
+          const statusTexto: Record<string, string> = {
+            pendente: "📋 Recebido — aguardando confirmação",
+            confirmado: "👨‍🍳 Em preparo — a cozinha já começou",
+            saiu_entrega: "🛵 Saiu para entrega",
+            pronto: "✅ Pronto para retirada",
+            entregue: "🎉 Entregue",
+          };
+          return {
+            etapa: "intencao",
+            texto: `Seu último pedido (*Nº ${ultimoPedido.numero}*) está: ${statusTexto[ultimoPedido.status] ?? ultimoPedido.status}.\n\nQuer fazer um novo pedido?`,
+          };
+        }
+        return {
+          etapa: "intencao",
+          texto: "Não encontrei pedidos seus no sistema. 🤔 Quer fazer um pedido novo?",
         };
       }
       if (querPromocao(texto)) {
@@ -560,6 +748,34 @@ async function passoAtendimento(
         if (achadosDiretos.length === 1) {
           estado.tentativas = 0;
           return selecionarProduto(achadosDiretos[0], estado);
+        }
+        if (achadosDiretos.length > 1) {
+          estado.ultimaBusca = achadosDiretos.map((p) => ({ id: p.id, nome: p.nome }));
+          estado.tentativas = 0;
+          return {
+            etapa: "produto",
+            texto: `Encontrei mais de um item. Qual deles você quer?\n${listar(
+              achadosDiretos.map((p) => ({ nome: p.nome, detalhe: brl(p.precoBase) }))
+            )}\n*(responda com o número)*`,
+          };
+        }
+      }
+      // GRACEFUL DEGRADATION: tenta busca ampla (parcial) antes de desistir.
+      {
+        const termo = texto.trim().slice(0, 40);
+        const palavras = termo.split(/\s+/).filter((p) => p.length >= 3);
+        for (const palavra of palavras) {
+          const fuzzy = await buscarProdutos(estado.empresaId, palavra, 3);
+          if (fuzzy.length > 0) {
+            estado.ultimaBusca = fuzzy.map((p) => ({ id: p.id, nome: p.nome }));
+            estado.tentativas = 0;
+            return {
+              etapa: "produto",
+              texto: `Você quis dizer algum desses?\n${listar(
+                fuzzy.map((p) => ({ nome: p.nome, detalhe: brl(p.precoBase) }))
+              )}\n*(responda com o número)*`,
+            };
+          }
         }
       }
       estado.tentativas += 1;
@@ -806,15 +1022,36 @@ async function passoAtendimento(
     case "mais_itens": {
       if (ehSim(texto)) {
         estado.ultimaBusca = [];
+        const categoriasNoPedido = estado.itens.map((i) => i.nome.toLowerCase());
+        const sugestoes: string[] = [];
+        if (!categoriasNoPedido.some((n) => /refrigerante|bebida/i.test(n))) {
+          const bebidas = (await buscarProdutos(estado.empresaId, "refrigerante", 3)).slice(0, 2);
+          if (bebidas.length > 0) sugestoes.push(...bebidas.map((b) => b.nome));
+        }
+        if (estado.itens.some((i) => /pizza/i.test(i.nome)) && !categoriasNoPedido.some((n) => /borda|garlic|pão/i.test(n))) {
+          const bordas = (await buscarProdutos(estado.empresaId, "borda", 2));
+          if (bordas.length > 0) sugestoes.push(...bordas.map((b) => b.nome));
+        }
+        const textoSugestao = sugestoes.length > 0
+          ? `\n💡 *Sugestão:* ${sugestoes.slice(0, 2).join(" ou ")}?`
+          : "";
         return {
           etapa: "produto",
-          texto: "Boa! O que mais você vai querer? (diga o nome do produto)",
+          texto: `Boa! O que mais você vai querer?${textoSugestao}\n(diga o nome do produto)`,
         };
       }
       if (ehNao(texto) || querPedir(texto)) {
         return {
           etapa: "entrega_retirada",
           texto: "Perfeito! 🛵 Será *entrega* ou *retirada*?",
+        };
+      }
+      if (querVerTotal(texto)) {
+        const subtotal = estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0);
+        const linhas = estado.itens.map((i) => `• ${i.quantidade}× ${i.nome}${i.tamanho ? ` (${i.tamanho})` : ""} — ${brl(i.precoUnit * i.quantidade)}`);
+        return {
+          etapa: "mais_itens",
+          texto: `🛒 *Seu carrinho:*\n${linhas.join("\n")}\n\n*Subtotal: ${brl(subtotal)}*\n\nQuer mais alguma coisa? *(sim / não)*`,
         };
       }
       return { etapa: "mais_itens", texto: "Quer adicionar mais algum item? *(sim / não)*" };
@@ -959,6 +1196,26 @@ async function passoAtendimento(
     }
 
     case "criado": {
+      if (querStatusPedido(texto) && estado.pedidoId) {
+        const pedido = await prisma.pedido.findUnique({
+          where: { id: estado.pedidoId },
+          select: { numero: true, status: true, criadoEm: true },
+        });
+        if (pedido) {
+          const statusTexto: Record<string, string> = {
+            pendente: "📋 Recebido — aguardando confirmação",
+            confirmado: "👨‍🍳 Em preparo — a cozinha já começou",
+            saiu_entrega: "🛵 Saiu para entrega",
+            pronto: "✅ Pronto para retirada",
+            entregue: "🎉 Entregue",
+            cancelado: "❌ Cancelado",
+          };
+          return {
+            etapa: "criado",
+            texto: `Pedido *Nº ${pedido.numero}*: ${statusTexto[pedido.status] ?? pedido.status}.\n\nSe precisar de mais alguma coisa, é só chamar! 😊`,
+          };
+        }
+      }
       if (querPedir(texto) || querCardapio(texto)) {
         estado.itens = [];
         estado.canal = undefined;
@@ -975,6 +1232,36 @@ async function passoAtendimento(
         etapa: "criado",
         texto: "Seu pedido já está confirmado! Se precisar de algo, pode me chamar. 😊",
       };
+    }
+
+    case "troca_selecao": {
+      const idx = indiceNumerico(texto, 10);
+      if (idx !== null && estado.ultimaBusca?.[idx]) {
+        const novo = estado.ultimaBusca[idx];
+        const antigoIdx = estado.itens.length - 1;
+        if (antigoIdx >= 0) {
+          const antigo = estado.itens[antigoIdx];
+          const novoProduto = await prisma.produto.findFirst({
+            where: { id: novo.id, empresaId: estado.empresaId },
+            include: { precos: { include: { tamanho: true } } },
+          });
+          if (novoProduto) {
+            const novoPreco = novoProduto.precos.length > 0 ? novoProduto.precos[0].valor : novoProduto.preco;
+            estado.itens[antigoIdx] = {
+              ...antigo,
+              produtoId: novoProduto.id,
+              nome: novoProduto.nome,
+              precoUnit: novoPreco,
+            };
+            estado.tentativas = 0;
+            return {
+              etapa: "mais_itens",
+              texto: `Troquei *${antigo.nome}* por *${novoProduto.nome}*. ✅\n*Subtotal: ${brl(estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0))}*\n\nQuer mais alguma coisa? *(sim / não)*`,
+            };
+          }
+        }
+      }
+      return { etapa: "mais_itens", texto: "Não consegui processar a troca. Tente novamente." };
     }
 
     default:
@@ -1282,6 +1569,7 @@ async function criarPedidoReal(estado: Estado): Promise<PassoResultado> {
     };
   }
 
+  estado.pedidoId = pedido.id;
   estado.chaveIdempotencia = undefined;
   emitirMudancaKds(estado.empresaId);
 
