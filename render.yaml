@@ -11,7 +11,7 @@ services:
     runtime: node
     region: ohio
     plan: free
-    buildCommand: npm ci && rm -rf .next && rm -rf node_modules/.prisma && npx prisma generate && npm run build
+    buildCommand: npm install && rm -rf .next && rm -rf node_modules/.prisma && npx prisma generate && npm run build
     # No boot, antes de subir a aplicação, roda o passo de migration explícito:
     # `prisma migrate deploy` + sincronização dos schemas de tenant + backfill
     # + `setup-config-pizza`. Tudo idempotente — restart é seguro. Isso garante
