@@ -164,3 +164,17 @@ export async function nomeFantasia(empresaId: string): Promise<string | null> {
 
 /** Re-export das regras de taxa (mesma fonte do PDV delivery). */
 export { lerConfigTaxaEntrega, calcularTaxaEntrega };
+
+/**
+ * Endereços salvos do cliente (usado na coleta de endereço de entrega).
+ * Retorna os endereços cadastrados pelo cliente NESTA empresa.
+ */
+export async function buscarEnderecosPorTelefone(empresaId: string, telefone: string) {
+  const limpo = normalizarTelefone(telefone);
+  if (!limpo) return [];
+  const cliente = await prisma.cliente.findFirst({
+    where: { empresaId, telefone: { contains: limpo.replace(/\D/g, "").slice(-8) } },
+    include: { enderecos: true },
+  });
+  return cliente?.enderecos ?? [];
+}

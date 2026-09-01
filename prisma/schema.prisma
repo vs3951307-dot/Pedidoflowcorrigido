@@ -134,6 +134,7 @@ model Empresa {
   movimentacoesCaixa   MovimentacaoCaixa[]
   estoqueProdutos      EstoqueProduto[]
   movimentacoesEstoque MovimentacaoEstoque[]
+  produtoInsumos       ProdutoInsumo[]
   notasFiscais         NotaFiscal[]
   entregadores         Entregador[]
   entregas             Entrega[]
@@ -148,6 +149,7 @@ model Empresa {
   auditoria            Auditoria[]
   usosIa               UsoIa[]
   pagamentosAssinatura AssinaturaPagamento[]
+  eventosIA           EventoIA[]
 
   @@index([status])
 }
@@ -432,6 +434,7 @@ model Produto {
   sabores     ProdutoSabor[]
   precos      PrecoTamanho[]
   itens       ItemPedido[]
+  insumos     ProdutoInsumo[]
 
   @@index([categoriaId])
   @@index([empresaId])
@@ -808,6 +811,7 @@ model EstoqueProduto {
   // público do arquivo, nunca o binário no banco.
   fotoUrl       String?
   movimentacoes MovimentacaoEstoque[]
+  produtos      ProdutoInsumo[]
 
   @@unique([empresaId, nome])
 }
@@ -829,6 +833,24 @@ model MovimentacaoEstoque {
   @@index([produtoId])
   @@index([criadoEm])
   @@index([empresaId])
+}
+
+// Vínculo Produto × Insumo (ficha técnica) — indica quantos insumos do
+// estoque são necessários para fabricar 1 unidade do produto. Quando um
+// produto NÃO possui registros aqui, o atendente assume que pode ser
+// feito normalmente (sem controle de estoque por ingrediente).
+model ProdutoInsumo {
+  empresa            Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId          String
+  produto            Produto        @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  produtoId          String
+  estoqueProduto     EstoqueProduto @relation(fields: [estoqueProdutoId], references: [id], onDelete: Cascade)
+  estoqueProdutoId   String
+  quantidadeNecessaria Float
+
+  @@id([produtoId, estoqueProdutoId])
+  @@index([empresaId])
+  @@index([estoqueProdutoId])
 }
 
 model NotaFiscal {
@@ -1087,4 +1109,48 @@ model Backup {
   status    String   @default("concluido") // concluido | falhou | em_andamento
 
   @@index([empresaId])
+}
+
+// ================================================================
+// OBSERVABILIDADE — Eventos de IA (Fase 6)
+// ================================================================
+
+model EventoIA {
+  id        String   @id @default(cuid())
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId String
+
+  // Tipo de evento: "interpretacao" | "beautifier" | "agente" | "fsm"
+  tipo      String
+
+  // Etapa da conversa no momento do evento
+  etapa     String
+
+  // Input bruto do cliente
+  input     String
+
+  // Output gerado (texto final ou tool call)
+  output    String
+
+  // Tokens usados (estimativa ou real do provedor)
+  tokensEntrada Int @default(0)
+  tokensSaida   Int @default(0)
+
+  // Latência em ms
+  latenciaMs Int @default(0)
+
+  // Se usou tool calling: lista de tools chamadas
+  toolsChamadas String? // JSON array: ["buscar_produto", "ver_preco"]
+
+  // Se falhou, motivo
+  erro      String?
+
+  // Duração total do processamento (ms)
+  duracaoMs Int @default(0)
+
+  criadoEm  DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([criadoEm])
+  @@index([tipo])
 }

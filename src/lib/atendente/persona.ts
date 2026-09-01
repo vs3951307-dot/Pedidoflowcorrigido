@@ -94,23 +94,19 @@ export async function salvarPersonaAtendente(
 }
 
 /**
- * Abertura padrão que ajuda o cliente a saber o que pode fazer.
- *
- * NÃO é mais concatenada à saudação (isso duplicava frases e misturava
- * mensagens antigas com novas). Fica apenas como exposição auxiliar — as
- * respostas usam a saudação única `montarSaudacao` / `saudacaoInicial`.
+ * Abertura padrão — NÃO é usada mais como sugestão concatenada à saudação.
+ * Mantida apenas por compatibilidade; as respostas usam `montarSaudacao`.
  */
-export const SUGESTAO_INICIAL = `(pode dizer *"pedir"*, *"cardápio"*, *"promoções"* ou *"horário"*)`;
+export const SUGESTAO_INICIAL = "";
 
 /**
  * FONTE ÚNICA da saudação inicial da atendente.
  *
- * O texto é fixo e amigável: `Olá! 😊 Eu sou a {nome}, atendente da {loja}!
- * 🍕💜 Como posso ajudar você hoje?` — sem concatenar sugestões nem repetir
- * cumprimentos. Sem nome de atendente configurado, cai numa saudação neutra.
+ * Saudação curta e natural — sem listar comandos, sem "pode dizer pedir",
+ * sem menu de opções. Apenas uma conversa humana no WhatsApp.
  *
  * `loja` é o `nomeFantasia` da empresa (leitura em `catalogo.ts`), nunca
- * inventado. Quando não informado, mantém um rótulo genérico.
+ * inventado.
  */
 export function montarSaudacao(
   persona: PersonaAtendente,
@@ -118,15 +114,12 @@ export function montarSaudacao(
   loja?: string | null
 ): string {
   const nome = persona.nome.trim();
-  const cliente = nomeCliente ? `Olá, ${nomeCliente}! 😊` : "Olá! 😊";
+  const cliente = nomeCliente ? `Oi, ${nomeCliente}! 😊` : "Oi! 😊";
   if (!nome) {
-    return `${cliente} O que você deseja hoje?`;
+    return `${cliente} Tudo bem? Como posso te ajudar?`;
   }
   const lojaFinal = loja?.trim() || "nossa loja";
-  const saudacao = `${cliente} Eu sou a ${nome}, atendente da ${lojaFinal}! 🍕💜 Como posso ajudar você hoje?`;
-  // Sanitização: garante que a saudação começa com "Olá" — remove qualquer
-  // texto que a IA beautifier possa ter adicionado antes (ex.: "Aqui é a").
-  return saudacao.replace(/^[^Oo]*Olá/, "Olá");
+  return `${cliente} Eu sou a ${nome}, da ${lojaFinal} 🍕 Como posso te ajudar?`;
 }
 
 /** Saudação única usada quando uma conversa realmente começa. */
@@ -137,3 +130,23 @@ export function saudacaoInicial(
 ): string {
   return montarSaudacao(persona, nomeCliente, loja);
 }
+
+/**
+ * Restrições de fluxo do atendente — usadas no prompt do LLM (beautifier)
+ * e no guard de permissões. Documenta a ordem OBRIGATÓRIA das etapas:
+ *
+ * 1. Saudação → 2. Nome (se desconhecido) → 3. Intentação → 4. Produto →
+ * 5. Tamanho (se aplicável) → 6. Sabores (se aplicável) → 7. Adicionais →
+ * 8. Quantidade → 9. Mais itens? → 10. Entrega/Retirada → 11. Endereço
+ * (se entrega) → 12. Pagamento → 13. Resumo → 14. Confirmação
+ *
+ * NUNCA pular etapas. NUNCA confirmar sem todos os dados coletados.
+ */
+export const RESTRICOES_FLUXO = `
+REGRAS DE FLUXO (OBRIGATÓRIAS — NUNCA QUEBRAR):
+- O pedido segue uma ordem fixa: produto → tamanho → sabores → adicionais → quantidade → entrega/retirada → endereço (se entrega) → pagamento → resumo → confirmação.
+- NÃO pule etapas. NÃO confirme o pedido sem ter coletado: endereço (se entrega) E forma de pagamento.
+- NÃO invente dados. Se faltar informação, PERGUNTE ao cliente.
+- Se o cliente quiser trocar ou tirar item, volte para a etapa correta (não confirme com dados incompletos).
+- Cancelamento funciona a qualquer momento — sempre respeite.
+`.trim();

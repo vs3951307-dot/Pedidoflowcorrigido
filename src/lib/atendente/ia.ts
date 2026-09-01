@@ -18,6 +18,7 @@
 import { registrarUsoIA, limiteIaExcedido, estimarTokens } from "@/lib/uso-ia";
 import { chamarIA } from "@/lib/ai-provider";
 import type { PersonaAtendente } from "@/lib/atendente/persona";
+import { RESTRICOES_FLUXO } from "@/lib/atendente/persona";
 
 export function iaDisponivel(): boolean {
   return Boolean(process.env.IA_ATENDENTE_API_KEY);
@@ -160,6 +161,8 @@ export async function embelezarResposta(ctx: ContextoEmbelezamento): Promise<str
     "- NUNCA fale de algo que não existe na resposta original e no contexto fornecido.",
     "- NÃO escreva uma resposta diferente da que o sistema precisa. Mantenha o mesmo número de opções e a mesma pergunta.",
     "- NÃO responda por JSON além do formato pedido.",
+    "",
+    RESTRICOES_FLUXO,
     "",
     `Histórico da conversa até aqui (resumo): ${historico || "início do atendimento"}`,
     `Item que o cliente está escolhendo agora: ${ctx.itemAtual || "nenhum em montagem"}`,

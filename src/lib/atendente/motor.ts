@@ -40,8 +40,12 @@ import {
   listarProdutosDisponiveis,
   nomeFantasia,
   normalizarTelefone,
+  buscarEnderecosPorTelefone,
 } from "@/lib/atendente/catalogo";
 import { iaDisponivel, interpretarMensagem, embelezarResposta } from "@/lib/atendente/ia";
+import { verificarDisponibilidade } from "@/lib/atendente/disponibilidade";
+import { acaoPermitida, classificarAcao } from "@/lib/atendente/permissoes";
+import { agenteProcessar } from "@/lib/atendente/agente";
 import {
   PERSONA_PADRAO,
   carregarPersonaAtendente,
@@ -149,10 +153,13 @@ function indiceNumerico(texto: string, tamanho: number): number | null {
 
 function ehSim(texto: string): boolean {
   const t = texto.trim();
-  if (/^(sim|ok|pode|pode pedir|confirmar|confirmo|confirmado|fechar|fecha|tudo certo|isso|certo|com certeza|manda|pode fechar|claro)\b/i.test(t)) return true;
-  // "s" isolado (gíria) só conta quando sozinho ou entre espaços — nunca
-  // no início de outra palavra (ex.: "só isso" não é "sim").
-  return /(?:^|\s)s(?:$|\s)/.test(t);
+  // REGRA 12: só confirma se a mensagem for EXATAMENTE uma palavra de confirmação,
+  // ou terminar com pontuação (ok!, sim., claro!). Evita que "isso, quanto vai ser?"
+  // confirme o pedido acidentalmente.
+  if (/^(sim|ok|pode|pode pedir|confirmar|confirmo|confirmado|fechar|fecha|tudo certo|isso|certo|com certeza|manda|pode fechar|claro)[!.,;]*$/i.test(t)) return true;
+  // "s" isolado (gíria) só conta quando sozinho — nunca em "só isso", "sim senhor", etc.
+  if (/^s[!.,;]*$/i.test(t)) return true;
+  return false;
 }
 
 function ehNao(texto: string): boolean {
@@ -445,7 +452,7 @@ async function passoAtendimento(
       estado.cliente = { nome, telefone: estado.cliente?.telefone ?? "" };
       return {
         etapa: "intencao",
-        texto: `Prazer, ${nome}! 😊 O que você gostaria de pedir hoje?`,
+        texto: `Prazer, ${nome}! 😊 O que você está com vontade de pedir?`,
       };
     }
 
@@ -588,7 +595,7 @@ async function passoAtendimento(
         }
         return {
           etapa: "intencao",
-          texto: "Não encontrei pedidos anteriores no seu cadastro. 🤔 Quer ver o *cardápio* e montar um novo pedido?",
+          texto: "Não achei pedidos anteriores no seu cadastro. 🤔 Quer ver o *cardápio* e montar um novo?",
         };
       }
       // Pergunta sobre preço de produto específico ("quanto custa a calabresa?", "preço da grande")
@@ -611,7 +618,7 @@ async function passoAtendimento(
         const cardapio = await cardapioResumo(estado.empresaId);
         return {
           etapa: "intencao",
-          texto: `Esse é o nosso cardápio:\n\n${cardapio}\n\nQuer pedir algum? É só me dizer o nome. 😊`,
+          texto: `Esse é o nosso cardápio:\n\n${cardapio}\n\nSe quiser pedir, é só me dizer o nome. 😊`,
         };
       }
       if (querHorario(texto)) {
@@ -620,13 +627,13 @@ async function passoAtendimento(
           persona.horario?.trim() ||
           (await horarioFuncionamento(estado.empresaId)) ||
           "todos os dias, das 18h às 23h";
-        return { etapa: "intencao", texto: `Nosso horário de funcionamento: ${horario}. Quer fazer um pedido?` };
+        return { etapa: "intencao", texto: `Nosso horário: ${horario}. Se quiser pedir, é só me chamar! 😊` };
       }
       if (querRegras(texto) && persona.regras?.trim()) {
         estado.tentativas = 0;
         return {
           etapa: "intencao",
-          texto: `Nossas regras:\n\n${persona.regras.trim()}\n\nQuer fazer um pedido?`,
+          texto: `Nossas regras:\n\n${persona.regras.trim()}\n\nSe quiser pedir, me avisa! 😊`,
         };
       }
       // Pergunta sobre entrega/cobertura de bairro/taxa → responde com as
@@ -643,7 +650,7 @@ async function passoAtendimento(
         estado.tentativas = 0;
         return {
           etapa: "intencao",
-          texto: "O que você gostaria de pedir hoje? 😊 (pode ser *pizza*, *lanche* ou *bebida* — ou ver o *cardápio*)",
+          texto: "Oi 😊 Quer fazer um pedido ou tem alguma dúvida?",
         };
       }
       // Status do pedido — cliente pergunta sobre pedido existente.
@@ -669,7 +676,7 @@ async function passoAtendimento(
         }
         return {
           etapa: "intencao",
-          texto: "Não encontrei pedidos seus no sistema. 🤔 Quer fazer um pedido novo?",
+          texto: "Não achei pedidos seus no sistema. 🤔 Quer montar um novo?",
         };
       }
       if (querPromocao(texto)) {
@@ -713,7 +720,7 @@ async function passoAtendimento(
           if (/^(pizza|pizzas|bebida|bebidas|sobremesa|sobremesas|lanche|lanches|combo|combos|drinks|bebidas)$/i.test(semIntencao)) {
             return {
               etapa: "produto",
-              texto: "Claro! O que você vai querer? (diga o nome do produto ou a categoria, ex.: *pizza*, *bebida*, *sobremesa*)",
+              texto: "Claro! Qual sabor ou item você quer?",
             };
           }
           estado.tentativas += 1;
@@ -731,7 +738,7 @@ async function passoAtendimento(
         estado.tentativas = 0;
         return {
           etapa: "produto",
-          texto: "Claro! O que você vai querer? (diga o nome do produto ou a categoria, ex.: *pizza*, *bebida*, *sobremesa*)",
+          texto: "Claro! Me diz o que você quer que eu já busco.",
         };
       }
       // Texto direto de produtos, sem verbo de pedido (ex.: "torre e coca",
@@ -784,7 +791,7 @@ async function passoAtendimento(
       }
       return {
         etapa: "intencao",
-        texto: "Não entendi. 😅 Você pode me dizer se quer *pedir*, ver o *cardápio*, as *promoções* ou o *horário*?",
+        texto: "Não entendi direito. 😅 Pode me contar o que você procura?",
       };
     }
 
@@ -1054,6 +1061,66 @@ async function passoAtendimento(
           texto: `🛒 *Seu carrinho:*\n${linhas.join("\n")}\n\n*Subtotal: ${brl(subtotal)}*\n\nQuer mais alguma coisa? *(sim / não)*`,
         };
       }
+      // REGRA 13: tirar item do carrinho no estado "mais_itens".
+      if (querTirarItem(texto) && estado.itens.length > 0) {
+        const termo = limparBusca(texto.replace(/\b(tira|remov|tirar|remover|apaga|apagar|exclu|excluir|cancela|cancelar)\b/gi, ""));
+        const idxEncontrado = estado.itens.findIndex((i) =>
+          i.nome.toLowerCase().includes(termo.toLowerCase()) ||
+          termo.toLowerCase().includes(i.nome.toLowerCase())
+        );
+        if (idxEncontrado >= 0) {
+          const removido = estado.itens.splice(idxEncontrado, 1)[0];
+          if (estado.itens.length === 0) {
+            return {
+              etapa: "intencao",
+              texto: `Tirei o *${removido.nome}*. 🗑️ Seu carrinho ficou vazio. Quer pedir mais alguma coisa?`,
+            };
+          }
+          const subtotal = estado.itens.reduce((acc, i) => acc + i.precoUnit * i.quantidade, 0);
+          const linhas = estado.itens.map((i) => `• ${i.quantidade}× ${i.nome}${i.tamanho ? ` (${i.tamanho})` : ""} — ${brl(i.precoUnit * i.quantidade)}`);
+          return {
+            etapa: "mais_itens",
+            texto: `Tirei o *${removido.nome}*. 🗑️\n\n🛒 *Carrinho atualizado:*\n${linhas.join("\n")}\n\n*Subtotal: ${brl(subtotal)}*\n\nQuer mais alguma coisa? *(sim / não)*`,
+          };
+        }
+        return {
+          etapa: "mais_itens",
+          texto: `Não encontrei "${termo}" no carrinho. Itens atuais:\n${listar(estado.itens.map((i) => ({ nome: `${i.quantidade}× ${i.nome}` })))}`,
+        };
+      }
+      // REGRA 13: trocar item no carrinho no estado "mais_itens".
+      if (querTrocarItem(texto) && estado.itens.length > 0) {
+        const termoLimpo = limparBusca(texto.replace(/\b(troca|trocar|troco|muda|mudar|substitui|substituir|coloca em vez|em vez de)\b/gi, ""));
+        const partes = termoLimpo.split(/\s*(?:pelo|pela|por|pra|pro|by|para|no lugar|em vez)\s+/i);
+        if (partes.length >= 2) {
+          const termoAntigo = partes[0].trim();
+          const termoNovo = partes.slice(1).join(" ").trim();
+          const idxEncontrado = estado.itens.findIndex((i) =>
+            i.nome.toLowerCase().includes(termoAntigo.toLowerCase()) ||
+            termoAntigo.toLowerCase().includes(i.nome.toLowerCase())
+          );
+          if (idxEncontrado >= 0) {
+            const achados = await buscarProdutos(estado.empresaId, termoNovo, 3);
+            if (achados.length === 1) {
+              const antigo = estado.itens[idxEncontrado];
+              const novoProduto = await prisma.produto.findFirst({
+                where: { id: achados[0].id, empresaId: estado.empresaId },
+                include: { precos: { include: { tamanho: true } } },
+              });
+              if (novoProduto && novoProduto.ativo) {
+                const novoPreco = novoProduto.precos.length > 0 ? novoProduto.precos[0].valor : novoProduto.preco;
+                estado.itens[idxEncontrado] = { ...antigo, produtoId: novoProduto.id, nome: novoProduto.nome, precoUnit: novoPreco };
+                return {
+                  etapa: "mais_itens",
+                  texto: `Troquei *${antigo.nome}* por *${novoProduto.nome}*. ✅\n*Subtotal: ${brl(estado.itens.reduce((a, i) => a + i.precoUnit * i.quantidade, 0))}*\n\nQuer mais alguma coisa? *(sim / não)*`,
+                };
+              }
+            }
+          }
+          return { etapa: "mais_itens", texto: `Não encontrei "${termoAntigo}" no carrinho ou "${termoNovo}" no cardápio. 🤔` };
+        }
+        return { etapa: "mais_itens", texto: "Como quer trocar? Ex.: *troca a calabresa pela mussarela*" };
+      }
       return { etapa: "mais_itens", texto: "Quer adicionar mais algum item? *(sim / não)*" };
     }
 
@@ -1077,32 +1144,45 @@ async function passoAtendimento(
     }
 
     case "endereco": {
-      // Cliente cadastrado: oferece os endereços salvos.
-      const cliente = await clientePorTelefone(estado.empresaId, estado.cliente?.telefone ?? "");
-      if (cliente && cliente.enderecos.length > 0 && !estado.endereco) {
-        const opcoes = cliente.enderecos.map((e) => ({
+      // 1. Tenta extrair rua E bairro do texto (mensagem única do cliente).
+      const extraido = extrairEndereco(texto);
+      if (extraido && extraido.bairro.length >= 3) {
+        estado.endereco = { rua: extraido.rua, bairro: extraido.bairro };
+        return irParaPagamento(estado);
+      }
+
+      // 2. Cliente cadastrado com endereços salvos — oferece como opção.
+      const cliente = await buscarEnderecosPorTelefone(estado.empresaId, estado.cliente?.telefone ?? "");
+      if (cliente.length > 0 && !estado.endereco) {
+        const opcoes = cliente.map((e) => ({
           nome: `${e.rua} — ${e.bairro}${e.complemento ? ` (${e.complemento})` : ""}`,
         }));
         const idx = indiceNumerico(texto, opcoes.length);
         if (idx !== null) {
-          const e = cliente.enderecos[idx];
+          const e = cliente[idx];
           estado.endereco = { rua: e.rua, bairro: e.bairro };
           return irParaPagamento(estado);
         }
-        if (limpoEndereco(texto)) {
-          estado.endereco = { rua: texto.trim(), bairro: "" };
+        // Texto parece endereço → extrai rua e pergunta bairro.
+        if (limpoEndereco(texto) || extraido) {
+          const rua = extraido?.rua ?? texto.trim();
+          estado.endereco = { rua, bairro: "" };
           return { etapa: "bairro", texto: "E o *bairro*? (para calcular a taxa de entrega)" };
         }
         return {
           etapa: "endereco",
-          texto: `Podemos usar um endereço salvo?\n${listar(opcoes)}\nOu digite o endereço completo (rua e número).`,
+          texto: `Podemos usar um endereço salvo?\n${listar(opcoes)}\nOu digite o endereço (rua, número e bairro).`,
         };
       }
-      if (limpoEndereco(texto)) {
-        estado.endereco = { rua: texto.trim(), bairro: "" };
+
+      // 3. Sem endereços salvos — extrai rua e pergunta bairro.
+      if (limpoEndereco(texto) || extraido) {
+        const rua = extraido?.rua ?? texto.trim();
+        estado.endereco = { rua, bairro: "" };
         return { etapa: "bairro", texto: "E o *bairro*? (para calcular a taxa de entrega)" };
       }
-      return { etapa: "endereco", texto: "Qual o endereço de entrega? (rua e número)" };
+
+      return { etapa: "endereco", texto: "Qual o endereço de entrega? (rua, número e bairro)" };
     }
 
     case "bairro": {
@@ -1185,6 +1265,64 @@ async function passoAtendimento(
           texto: "Sem problema! Podemos recomeçar: você quer *pedir* alguma coisa?",
         };
       }
+      // REGRA 13: permite modificar carrinho mesmo no resumo.
+      if (querTirarItem(texto) && estado.itens.length > 0) {
+        const termo = limparBusca(texto.replace(/\b(tira|remov|tirar|remover|apaga|apagar|exclu|excluir|cancela|cancelar)\b/gi, ""));
+        const idxEncontrado = estado.itens.findIndex((i) =>
+          i.nome.toLowerCase().includes(termo.toLowerCase()) ||
+          termo.toLowerCase().includes(i.nome.toLowerCase())
+        );
+        if (idxEncontrado >= 0) {
+          const removido = estado.itens.splice(idxEncontrado, 1)[0];
+          if (estado.itens.length === 0) {
+            return {
+              etapa: "intencao",
+              texto: `Tirei o *${removido.nome}*. 🗑️ Seu carrinho ficou vazio. Quer pedir mais alguma coisa?`,
+            };
+          }
+          const resumo = await montarResumo(estado);
+          return { etapa: "resumo", texto: resumo };
+        }
+        return {
+          etapa: "resumo",
+          texto: `Não encontrei "${termo}" no resumo. Itens:\n${listar(estado.itens.map((i) => ({ nome: `${i.quantidade}× ${i.nome}` })))}`,
+        };
+      }
+      if (querTrocarItem(texto) && estado.itens.length > 0) {
+        const termoLimpo = limparBusca(texto.replace(/\b(troca|trocar|troco|muda|mudar|substitui|substituir|coloca em vez|em vez de)\b/gi, ""));
+        const partes = termoLimpo.split(/\s*(?:pelo|pela|por|pra|pro|by|para|no lugar|em vez)\s+/i);
+        if (partes.length >= 2) {
+          const termoAntigo = partes[0].trim();
+          const termoNovo = partes.slice(1).join(" ").trim();
+          const idxEncontrado = estado.itens.findIndex((i) =>
+            i.nome.toLowerCase().includes(termoAntigo.toLowerCase()) ||
+            termoAntigo.toLowerCase().includes(i.nome.toLowerCase())
+          );
+          if (idxEncontrado >= 0) {
+            const achados = await buscarProdutos(estado.empresaId, termoNovo, 3);
+            if (achados.length === 1) {
+              const antigo = estado.itens[idxEncontrado];
+              const novoProduto = await prisma.produto.findFirst({
+                where: { id: achados[0].id, empresaId: estado.empresaId },
+                include: { precos: { include: { tamanho: true } } },
+              });
+              if (novoProduto && novoProduto.ativo) {
+                const novoPreco = novoProduto.precos.length > 0 ? novoProduto.precos[0].valor : novoProduto.preco;
+                estado.itens[idxEncontrado] = { ...antigo, produtoId: novoProduto.id, nome: novoProduto.nome, precoUnit: novoPreco };
+                const resumo = await montarResumo(estado);
+                return { etapa: "resumo", texto: resumo };
+              }
+            }
+          }
+          return { etapa: "resumo", texto: `Não encontrei "${termoAntigo}" no resumo ou "${termoNovo}" no cardápio. 🤔` };
+        }
+        return { etapa: "resumo", texto: "Como quer trocar? Ex.: *troca a calabresa pela mussarela*" };
+      }
+      // REGRA 12: ver total no resumo — reapresenta o resumo.
+      if (querVerTotal(texto)) {
+        const resumo = await montarResumo(estado);
+        return { etapa: "resumo", texto: resumo };
+      }
       if (ehSim(texto)) {
         const criado = await criarPedidoReal(estado);
         return criado;
@@ -1265,13 +1403,58 @@ async function passoAtendimento(
     }
 
     default:
-      return { etapa: "intencao", texto: "Como posso ajudar? (pedir, cardápio, promoções, horário)" };
+      return { etapa: "intencao", texto: "Em que posso te ajudar?" };
   }
 }
 
 function limpoEndereco(texto: string): boolean {
   const t = texto.trim();
   return t.length >= 8 && /\d/.test(t) && /\s/.test(t);
+}
+
+/**
+ * Tenta extrair rua e bairro de um texto livre do cliente.
+ * Suporta formatos como:
+ *   "Rua X, 123 - Bairro Y"
+ *   "Rua X 123 Bairro Y"
+ *   "Rua X, Bairro Y"
+ *   "Rua X, Bairro Y, 123"
+ * Retorna `{ rua, bairro }` quando encontra ambos; `{ rua, bairro: "" }`
+ * quando só tem rua; ou `null` quando não conseguiu extrair nada útil.
+ */
+function extrairEndereco(texto: string): { rua: string; bairro: string } | null {
+  const t = texto.trim();
+  if (t.length < 5) return null;
+
+  // Tenta extrair bairro: depois de "bairro", "no bairro", "em", "no", "na"
+  const bairroMatch = t.match(
+    /(?:bairro|bairro\s+|,\s*|;\s*|no\s+|na\s+|em\s+|pro\s+|pra\s+)([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]{2,30})/i
+  );
+  let bairro = "";
+  if (bairroMatch) {
+    bairro = bairroMatch[1].trim().replace(/[.,;!?]+$/, "");
+    // Remove palavras de ligação no final
+    bairro = bairro.replace(/\s*(e|ou|com|para|pra|pro|de|do|da|dos|das)$/i, "").trim();
+  }
+
+  // Remove menções de bairro do texto para isolar a rua
+  let rua候选 = t;
+  if (bairro) {
+    rua候选 = t
+      .replace(/bairro\s+[a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]*/gi, "")
+      .replace(/,\s*/g, ", ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  // Limpa a rua: remove "rua", "av", "avenida", "travessa" do início se tiver
+  const rua = rua候选
+    .replace(/^\s*(rua|av\.?|avenida|travessa|alameda|estrada|rodovia|praça|beco|viela)\s+/gi, "")
+    .replace(/[.,;!?]+$/, "")
+    .trim();
+
+  if (rua.length < 3 && bairro.length < 3) return null;
+  return { rua: rua.length >= 3 ? t.split(/[;,]/)[0].trim() : t.trim(), bairro };
 }
 
 /**
@@ -1363,7 +1546,7 @@ function resolverPedidoDeComPretexto(pretexto: string, nomeItem: string, estado:
   return resolverPedidoDe(pretexto, nomeItem, estado, pretexto);
 }
 
-function selecionarProduto(produto: { id: string; nome: string }, estado: Estado): Promise<PassoResultado> {  // Recarrega o produto real (nunca confia no que o cliente digitou).
+function selecionarProduto(produto: { id: string; nome: string }, estado: Estado): Promise<PassoResultado> {
   return prisma.produto
     .findFirst({
       where: { id: produto.id, empresaId: estado.empresaId },
@@ -1372,9 +1555,16 @@ function selecionarProduto(produto: { id: string; nome: string }, estado: Estado
         sabores: { include: { sabor: true } },
       },
     })
-    .then((real) => {
+    .then(async (real) => {
       if (!real || !real.ativo) {
         return { etapa: "produto", texto: "Esse item está indisponível no momento. Pode escolher outro?" };
+      }
+      const disp = await verificarDisponibilidade(estado.empresaId, real.id);
+      if (!disp.disponivel) {
+        return {
+          etapa: "produto",
+          texto: `Desculpa, *${real.nome}* está indisponível agora. ${disp.motivo ?? ""}\nQuer ver outro item do *cardápio*?`,
+        };
       }
       estado.atual = {
         produtoId: real.id,
@@ -1552,8 +1742,7 @@ async function criarPedidoReal(estado: Estado): Promise<PassoResultado> {
     return {
       etapa: "humana",
       texto:
-        `Não consegui fechar seu pedido automaticamente: ${resultado.erro} ` +
-        "Vou chamar um atendente humano para finalizar com você. 🙋",
+        "Não consegui fechar seu pedido automaticamente. 😕 Vou chamar um atendente humano para finalizar com você. 🙋",
     };
   }
 
@@ -1688,6 +1877,27 @@ export async function receberMensagemWhatsApp(
     data: { conversaId: conversa.id, de: "cliente", texto: limpo },
   });
 
+  // REGRA 20: proteção contra auto-mensagem. Se a mensagem do "cliente"
+  // é idêntica à última resposta do sistema, o motor estaria respondendo
+  // a si mesmo (loop infinito). Isso pode acontecer se o webhook reenvia
+  // uma mensagem que já foi processada e respondida.
+  const ultimaResposta = await prisma.mensagemWhatsApp.findFirst({
+    where: { conversaId: conversa.id, de: "sistema" },
+    orderBy: { criadoEm: "desc" },
+    select: { texto: true, criadoEm: true },
+  });
+  if (ultimaResposta && ultimaResposta.texto === limpo) {
+    console.warn(`[whatsapp] auto-mensagem detectada e ignorada (conversa ${conversa.id})`);
+    return {
+      resposta: "",
+      conversaId: conversa.id,
+      etapa: conversa.etapa,
+      status: conversa.status,
+      humana: conversa.atendimentoHumano,
+      pedidoId: null,
+    };
+  }
+
   // Conversa encerrada reabre com saudação curta (sem perder o vínculo).
   if (conversa.status === "encerrada") {
     const estadoReinicio: Estado = estadoZerado(empresaId);
@@ -1746,16 +1956,71 @@ export async function receberMensagemWhatsApp(
       etapa: "humana",
       texto: "Um atendente humano já está cuidando do seu atendimento e vai te responder em instantes. ⏳",
     };
+  } else if (querCancelar(limpo) && !["encerrada", "criado"].includes(conversa.etapa)) {
+    // REGRA 14: cancelamento funciona de QUALQUER etapa.
+    estado.itens = [];
+    estado.canal = undefined;
+    estado.endereco = undefined;
+    estado.formaPagamento = undefined;
+    estado.trocoPara = undefined;
+    estado.taxa = undefined;
+    estado.atual = undefined;
+    estado.pendentes = undefined;
+    resposta = { etapa: "intencao", texto: "Tudo bem! Pedido cancelado. 😊 Se quiser algo depois, é só me chamar." };
   } else if (querHumano(limpo) && !["humana", "encerrada", "criado"].includes(conversa.etapa)) {
     resposta = { etapa: "humana", texto: "Sem problemas! Vou transferir você para um atendente humano, um instante. 🙋" };
   } else {
+    // Carrega persona para uso tanto no agente quanto no FSM/beautifier.
     const persona = await carregarPersonaAtendente(empresaId);
+
+    // FASE 5: Agente com tool calling como camada primária.
+    // Se a IA está disponível e o agente consegue processar, usa o agente.
+    // Se o agente retornar null (falha, limite, sem IA), cai no FSM.
+    const agente = await agenteProcessar(empresaId, tel, limpo, conversa.etapa, estado);
+    if (agente) {
+      resposta = { etapa: conversa.etapa, texto: agente.texto };
+      // Atualiza estado com mudanças do agente.
+      if (agente.estado) {
+        if (agente.estado.itens) estado.itens = agente.estado.itens as typeof estado.itens;
+        if (agente.estado.atual !== undefined) estado.atual = agente.estado.atual as typeof estado.atual;
+        if (agente.estado.canal) estado.canal = agente.estado.canal as typeof estado.canal;
+        if (agente.estado.endereco) estado.endereco = agente.estado.endereco as typeof estado.endereco;
+        if (agente.estado.formaPagamento) estado.formaPagamento = agente.estado.formaPagamento;
+        if (agente.estado.taxa !== undefined) estado.taxa = agente.estado.taxa;
+        if (agente.estado.chaveIdempotencia) estado.chaveIdempotencia = agente.estado.chaveIdempotencia;
+        if (agente.estado.pedidoId) {
+          estado.pedidoId = agente.estado.pedidoId as string;
+          resposta.etapa = "criado";
+        }
+      }
+    } else {
+    // FALLBACK: FSM determinístico (quando agente não está disponível).
+
+    // GUARDA DE PERMISSÕES (Fase 2): classifica a ação do cliente e
+    // verifica se ela é permitida na etapa atual. Se bloqueada, redireciona
+    // para "intencao" com uma mensagem amigável — o cliente não pode pular
+    // etapas críticas (ex.: confirmar sem endereço).
+    const acao = classificarAcao(limpo, conversa.etapa);
+    if (!acaoPermitida(conversa.etapa, acao) && acao !== "outro") {
+      const sugestao = conversa.etapa === "endereco"
+        ? "Me diz seu endereço (rua e bairro) que eu calculo a taxa. 📍"
+        : conversa.etapa === "pagamento"
+          ? "Escolhe a forma de pagamento: *pix*, *dinheiro*, *débito* ou *crédito*."
+          : conversa.etapa === "tamanho"
+            ? "Escolhe o tamanho pela opção da lista."
+            : conversa.etapa === "sabores"
+              ? "Escolhe o sabor pela opção da lista."
+              : "Me diz o que você precisa que eu te ajudo! 😊";
+      resposta = { etapa: conversa.etapa, texto: sugestao };
+    } else {
     // IA opcional: normaliza a mensagem com os nomes reais do catálogo;
     // sem chave, usa a mensagem como veio (interpretação por regras).
     const textoDaMensagem = iaDisponivel()
       ? await normalizarComIa(conversa.etapa, limpo, estado, persona)
       : limpo;
     resposta = await passoAtendimento(conversa.etapa, textoDaMensagem, estado, persona);
+    } // fecha bloco de permissão
+    } // fecha fallback do agente
     // Avisa que a sessão antiga foi descartada (por inatividade) antes de
     // processar, para o cliente entender que o carrinho anterior sumiu.
     if (carrinhoLimpadoPorInatividade) {
@@ -1817,13 +2082,38 @@ export async function receberMensagemWhatsApp(
     // inflou/adicionou texto), restaura o texto original do motor.
     if (resposta.texto && resposta.texto !== respostaBaseOriginal) {
       const motorInicio = respostaBaseOriginal.slice(0, 4).toLowerCase();
-      if (motorInicio === "olá!" || motorInicio === "ola!") {
+      if (motorInicio === "olá!" || motorInicio === "ola!" || motorInicio === "oi! ") {
         // Se a resposta da IA é >10% mais longa que a do motor,
         // a IA inflou o texto (adicionou cumprimento/extra).
         if (resposta.texto.length > respostaBaseOriginal.length * 1.1) {
           resposta.texto = respostaBaseOriginal;
         }
       }
+    }
+  }
+
+  // PROTEÇÃO CONTRA REPETIÇÃO (REGRA 9): antes de salvar, verifica se a
+  // última mensagem do sistema foi idêntica à que estamos prestes a enviar.
+  // Se for, gera uma variação natural em vez de repetir exatamente.
+  const ultimaMsgSistema = await prisma.mensagemWhatsApp.findFirst({
+    where: { conversaId: conversa.id, de: "sistema" },
+    orderBy: { criadoEm: "desc" },
+    select: { texto: true },
+  });
+  if (ultimaMsgSistema && resposta.texto && resposta.etapa !== "humana") {
+    const ultima = ultimaMsgSistema.texto.trim();
+    const nova = resposta.texto.trim();
+    // Ignora formatação markdown para comparação
+    const limpar = (s: string) => s.replace(/[*_`~]/g, "").replace(/\s+/g, " ").toLowerCase();
+    if (limpar(ultima) === limpar(nova)) {
+      // Resposta idêntica — varia para não parecer bot quebrado.
+      if (resposta.etapa === "intencao" && estado.itens.length === 0) {
+        resposta.texto = "Me conta o que você quer que eu já procuro pra você! 😊";
+      } else if (resposta.etapa === "intencao") {
+        resposta.texto = "Posso te ajudar com mais alguma coisa? 😊";
+      }
+      // Para outras etapas (produto, tamanho, etc.), mantém — o cliente
+      // precisa ver a pergunta correta para responder.
     }
   }
 

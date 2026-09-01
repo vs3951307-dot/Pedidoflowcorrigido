@@ -21,38 +21,38 @@ const personaAna: PersonaAtendente = {
 };
 
 describe("montarSaudacao — saudação única do atendente", () => {
-  it("retorna saudação exata com nome da atendente e da loja", () => {
+  it("retorna saudação curta com nome da atendente e da loja", () => {
     const resultado = montarSaudacao(personaAna, null, "DiskPizza Rozeno");
     expect(resultado).toBe(
-      "Olá! 😊 Eu sou a Ana, atendente da DiskPizza Rozeno! 🍕💜 Como posso ajudar você hoje?"
+      "Oi! 😊 Eu sou a Ana, da DiskPizza Rozeno 🍕 Como posso te ajudar?"
     );
   });
 
   it("retorna saudação com nome do cliente quando informado", () => {
     const resultado = montarSaudacao(personaAna, "João", "DiskPizza Rozeno");
     expect(resultado).toBe(
-      "Olá, João! 😊 Eu sou a Ana, atendente da DiskPizza Rozeno! 🍕💜 Como posso ajudar você hoje?"
+      "Oi, João! 😊 Eu sou a Ana, da DiskPizza Rozeno 🍕 Como posso te ajudar?"
     );
   });
 
   it("usa 'nossa loja' quando loja não informada", () => {
     const resultado = montarSaudacao(personaAna, null);
     expect(resultado).toBe(
-      "Olá! 😊 Eu sou a Ana, atendente da nossa loja! 🍕💜 Como posso ajudar você hoje?"
+      "Oi! 😊 Eu sou a Ana, da nossa loja 🍕 Como posso te ajudar?"
     );
   });
 
   it("usa 'nossa loja' quando loja é string vazia", () => {
     const resultado = montarSaudacao(personaAna, null, "");
     expect(resultado).toBe(
-      "Olá! 😊 Eu sou a Ana, atendente da nossa loja! 🍕💜 Como posso ajudar você hoje?"
+      "Oi! 😊 Eu sou a Ana, da nossa loja 🍕 Como posso te ajudar?"
     );
   });
 
   it("usa 'nossa loja' quando loja é null", () => {
     const resultado = montarSaudacao(personaAna, null, null);
     expect(resultado).toBe(
-      "Olá! 😊 Eu sou a Ana, atendente da nossa loja! 🍕💜 Como posso ajudar você hoje?"
+      "Oi! 😊 Eu sou a Ana, da nossa loja 🍕 Como posso te ajudar?"
     );
   });
 
@@ -63,9 +63,9 @@ describe("montarSaudacao — saudação única do atendente", () => {
     expect(resultado).not.toContain("cardápio");
   });
 
-  it("NUNCA contém 'Aqui é a' antes de 'Olá'", () => {
+  it("NUNCA contém 'Aqui é a' antes de 'Oi'", () => {
     const resultado = montarSaudacao(personaAna, null, "Loja Teste");
-    expect(resultado.startsWith("Olá")).toBe(true);
+    expect(resultado.startsWith("Oi")).toBe(true);
     expect(resultado).not.toContain("Aqui é a");
   });
 
@@ -77,7 +77,7 @@ describe("montarSaudacao — saudação única do atendente", () => {
       horario: "",
     };
     const resultado = montarSaudacao(personaSemNome, null, "Loja X");
-    expect(resultado).toBe("Olá! 😊 O que você deseja hoje?");
+    expect(resultado).toBe("Oi! 😊 Tudo bem? Como posso te ajudar?");
   });
 
   it("saudacaoInicial é igual a montarSaudacao", () => {
@@ -86,8 +86,10 @@ describe("montarSaudacao — saudação única do atendente", () => {
     expect(r1).toBe(r2);
   });
 
-  it("sanitiza texto antes de 'Olá' (proteção anti-IA)", () => {
+  it("não lista comandos na saudação", () => {
     const resultado = montarSaudacao(personaAna, null, "Loja");
-    expect(resultado.startsWith("Olá")).toBe(true);
+    expect(resultado).not.toContain("pizza, lanche");
+    expect(resultado).not.toContain("cardápio");
+    expect(resultado).not.toContain("promoções");
   });
 });
